@@ -6,12 +6,8 @@
 __DEBUG_STRING = ""
 
 
-step_sounds_generic = get_sound_set("pl_step_generic") ///@is{array<sound>}
+step_sounds_generic = get_sound_set("pl_step_generic")
 audio_set_master_gain(0, 0.5)
-
-tick = method(self, function() /*=>*/ {
-	player.tick()
-})
 
 timer = new Timer(20)
 timer.time_scale = 1
@@ -42,6 +38,10 @@ mouse = {
 //cursor_x = 0
 //cursor_y = 0
 
+ray_box_ctx = new RayRectContext()
+
+boxcast_ctx = new BlockTraceContext()
+
 viewcast_x = 0
 viewcast_y = 0
 viewcast_xdirection = 0
@@ -51,26 +51,63 @@ viewcast_box = rect_copy(viewcast_box_absolute)
 
 __hit_x = 0
 __hit_y = 0
+__hit_time = infinity
+__hit_box = rect_create(0,0,0,0)
+__did_init = false
+///@self
 var vc_getb = method(self, function (_x, _y) {
+
 	var bloc = map.get_block(_x, _y)
-	var collide = bloc.collideable()
-	if collide
+	
+	if bloc.collideable()
 	{
+		if not __did_init
+		{
+			boxcast_ctx.setup_ray(
+				vec_get_temp(viewcast_x, viewcast_y),
+				vec_get_temp(viewcast_xdirection, viewcast_ydirection)
+			)
+			__did_init = true
+		}
+		__hit_time = infinity
 		__hit_x = _x
 		__hit_y = _y
+		var hw = rect_get_wide(viewcast_box) * 0.5
+		var hh = rect_get_tall(viewcast_box) * 0.5
+		var colliders = bloc.get_colliders(_x, _y)
+		for (var i = array_length(colliders); i > 0;)
+		{
+			var box = colliders[--i]
+			var ht = boxcast_ctx.test_simple(
+				rect_get_x0(box)-hw,
+				rect_get_y0(box)-hh,
+				rect_get_x1(box)+hw,
+				rect_get_y1(box)+hh
+			)
+			if ht < __hit_time
+			{
+				__hit_time = ht
+				rect_set_from(__hit_box, box)
+			}
+		}
+		return __hit_time < infinity
 	}
-	return collide
+	else
+	{
+		return false
+	}
 })
 
 var vc_onc = method(self, function (dist, axis, dir, remain)
 {
 	//show_debug_message($"dist: {dist}\naxis: {axis}\ndirection: {dir}\nremaining: {remain}")
 	//draw_rectangle_size(__hit_x, __hit_y, 1, 1, true)
+	//var vx = viewcaster.leading_corner
 	//draw_arrow(
-	//	viewcast_x-1,
-	//	viewcast_y-1,
-	//	viewcast_x+remain[0]-1,
-	//	viewcast_y*remain[1]-1,
+	//	vx[0]-1,
+	//	vx[1]-1,
+	//	vx[0]+remain[0]-1,
+	//	vx[1]+remain[1]-1,
 	//	4/16
 	//)
 	remain[axis] = 0
@@ -83,6 +120,7 @@ viewcaster = new RectVoxelSweeper(
 	vc_getb,
 	vc_onc
 )
+viewcaster.set_hard_time_limit(min(map.wide, map.tall))
 
 #region palette
 
@@ -140,3 +178,15 @@ player = new Player()
 
 player.update_co(map.wide * 0.5, 1.5, true)
 rect_set_from(viewcast_box_absolute, player.box_absolute)
+
+entities/*:Array<Entity>*/ = []
+
+array_push(entities, player)
+
+function tick ()
+{
+	for (var i = array_length(entities); i > 0;)
+	{
+		entities[--i].tick()
+	}
+}

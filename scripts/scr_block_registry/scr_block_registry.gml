@@ -6,11 +6,11 @@ global.block_soundtypes = {
 	grate: new BlockSoundType(, 0.5, "pl_step_grate"),
 }
 
-global.blocks_all/*:Array<Block>*/ = []
-global.blocks_nametable/*:Dict<Str, Block>*/ = {}
+global.blocks_all/*Array<Block>*/ = []
+global.blocks_nametable/*Dict<String, Block>*/ = {}
 
 /*generic(T=Block)*/
-function blocks_register (_name/*:Str*/, _block/*:T*/)/*->T*/
+function blocks_register (_name/*String*/, _block/*:T*/)/*->T*/
 {
 	_block.runtime_id = array_length(global.blocks_all)
 	array_push(global.blocks_all, _block)
@@ -25,89 +25,117 @@ function blocks_get_by_id (_id)
 	return global.blocks_all[_id]
 }
 
-global.air = blocks_register("air", new AirBlock())
-
-global.out_of_bounds = blocks_register("out_of_bounds", new OutOfBoundsBlock())
-
-global.stone = blocks_register("stone", new Block())
-with global.stone
+with blocks_register("air", new AirBlock())
 {
+	global.air = self
+}
+
+with blocks_register("out_of_bounds", new OutOfBoundsBlock())
+{
+	global.out_of_bounds = self
+}
+
+with blocks_register("stone", new Block())
+{
+	global.stone = self
 	colour = c_grey
 	sound_type = global.block_soundtypes.tile
 }
 
-global.dirt = blocks_register("dirt", new Block())
-with global.dirt
+with blocks_register("dirt", new Block())
 {
+	global.dirt = self
 	colour = c_orange
 	sound_type = global.block_soundtypes.dirt
 }
 
-global.slab = blocks_register("slab", new SlabBlock())
-global.slab.colour = c_grey
-
-global.quarter_slab = blocks_register("quarter_slab", new SlabBlock(0.25))
-global.quarter_slab.colour = c_grey
-
-global.upper_slab = blocks_register("upper_slab", new SlabBlock(1, 0.5))
-global.upper_slab.colour = c_ltgrey
-
-global.precarious = blocks_register("precarious", new FenceBlock())
-global.precarious.colour = merge_color(c_orange, c_black, 0.4)
-
-global.left_stair = blocks_register("left_stairs", new StairBlock(-1))
-global.left_stair.colour = c_aqua
-
-global.right_stair = blocks_register("right_stairs", new StairBlock(+1))
-global.right_stair.colour = c_teal
-
-global.endless_down = blocks_register("top_platform", new EndlessBlock(+1))
-with global.endless_down
+with blocks_register("slab", new SlabBlock())
 {
+	global.slab = self
+	colour = c_grey
+}
+
+with blocks_register("quarter_slab", new SlabBlock(0.25))
+{
+	global.quarter_slab = self
+	colour = c_grey
+}
+
+with blocks_register("upper_slab", new SlabBlock(1, 0.5))
+{
+	global.upper_slab = self
+	colour = c_ltgrey
+}
+
+with blocks_register("precarious", new FenceBlock())
+{
+	global.precarious = self
+	colour = merge_color(c_orange, c_black, 0.4)
+}
+
+with blocks_register("left_stairs", new StairBlock(-1))
+{
+	global.left_stair = self
+	colour = c_aqua
+}
+
+with blocks_register("right_stairs", new StairBlock(+1))
+{
+	global.right_stair = self
+	colour = c_teal
+}
+
+with blocks_register("top_platform", new EndlessBlock(+1))
+{
+	global.endless_down = self
 	colour = c_red
 	sound_type = global.block_soundtypes.grate
 }
 
-global.endless_up = blocks_register("bottom_platform", new EndlessBlock(-1))
-with global.endless_up
+with blocks_register("bottom_platform", new EndlessBlock(-1))
 {
+	global.endless_up = self
 	colour = c_maroon
 	sound_type = global.block_soundtypes.grate
 }
 
-global.left_ladder = blocks_register("left_ladder", new LadderBlock("left"))
-global.left_ladder.colour = c_orange
-
-global.right_ladder = blocks_register("right_ladder", new LadderBlock("right"))
-global.right_ladder.colour = c_orange
-
-
-global.lego_studs = blocks_register("lego_studs", new ColliderCollectionBlock())
-with global.lego_studs
+with blocks_register("left_ladder", new LadderBlock("left"))
 {
+	global.left_ladder = self
+	colour = c_orange
+}
+
+with blocks_register("right_ladder", new LadderBlock("right"))
+{
+	global.right_ladder = self
+	colour = c_orange
+}
+
+with blocks_register("lego_studs", new ColliderCollectionBlock())
+{
+	global.lego_studs = self
 	colour = c_lime
 	
 	__add_colliders(
-		rect_create(2/16, 0, 4/16, 1/16),
-		rect_create((16-4)/16, 0, (16-2)/16, 1/16)
+		rect_get_temp(2/16, 0, 4/16, 1/16),
+		rect_get_temp((16-4)/16, 0, (16-2)/16, 1/16)
 	)
-	
 }
 
-global.tiny_stairs = blocks_register("shit_ramp", new ColliderCollectionBlock())
-with global.tiny_stairs
+with blocks_register("shit_ramp", new ColliderCollectionBlock())
 {
+	global.tiny_stairs = self
 	colour = c_lime
 
 	for (var i = 1; i <= 16; i++)
 	{
-		__add_collider(rect_create(0, 1-(i/16), i/16, 1-(i-1)/16))
+		__add_collider(rect_get_temp(0, 1-(i/16), i/16, 1-(i-1)/16))
 	}
 }
 
-global.ice = blocks_register("ice", new IceBlock())
-with global.ice
+with blocks_register("ice", new IceBlock())
 {
+	global.ice = self
 	colour = #7bc6fc
 	sound_type = global.block_soundtypes.tile
 }

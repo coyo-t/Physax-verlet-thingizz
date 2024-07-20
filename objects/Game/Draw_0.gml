@@ -19,7 +19,7 @@ draw_primitive_begin(pr_linelist)
 draw_set_color(c_dkgrey)
 draw_vertex(-200, 0)
 draw_vertex(map.wide+200, 0)
-	
+
 draw_set_color(c_red)
 draw_vertex(0, 0)
 draw_vertex(sz, 0)
@@ -36,119 +36,217 @@ begin
 	var plry0 = rect_get_y0(player.box)
 	var plrx1 = rect_get_x1(player.box)
 	var plry1 = rect_get_y1(player.box)
-		
+	
 	var pxnow = lerp(player.xprevious, player.x, tfac)
 	var pynow = lerp(player.yprevious, player.y, tfac)
 	var peyenow = pynow+player.eyeline
-		
+	
 	var xx = lerp(rect_get_x0(player.previous_box), plrx0, tfac)
 	var yy = lerp(rect_get_y0(player.previous_box), plry0, tfac)
 		
 	viewcast_xdirection = mouse.world_x-viewcast_x
 	viewcast_ydirection = mouse.world_y-viewcast_y
+	
+	if keyboard_check(ord("E"))
+	{
+		if abs(viewcast_xdirection) < abs(viewcast_ydirection)
+		{
+			viewcast_xdirection = 0
+		}
+		else
+		{
+			viewcast_ydirection = 0
+		}
+	}
+	
 	rect_set_from(viewcast_box, viewcast_box_absolute)
 	rect_move(viewcast_box, viewcast_x, viewcast_y)
-		
-	viewcaster.set_box(viewcast_box)
-	vec_set_xy(viewcaster.direction, viewcast_xdirection, viewcast_ydirection)
-		
-	var trace_result = viewcaster.sweep()
-	__DEBUG_STRING = string_join("\n",
-		$"{power(trace_result, 2)}",
-		$"{power(viewcast_xdirection, 2)+power(viewcast_ydirection,2)}",
-	) 
-		
+	
+	#region rect-v-rec cast
+	
 	begin
-		var vx0 = viewcaster.box_min[0]
-		var vy0 = viewcaster.box_min[1]
-		var vx1 = viewcaster.box_max[0]
-		var vy1 = viewcaster.box_max[1]
-			
-		draw_set_color(c_white)
-		draw_primitive_begin(pr_linestrip)
-		draw_vertex(vx0, vy0)
-		draw_vertex(vx1, vy0)
-		draw_vertex(vx1, vy1)
-		draw_vertex(vx0, vy1)
-		draw_vertex(vx0, vy0)
-		draw_primitive_end()
-			
-		vx0 = rect_get_x0(viewcast_box)
-		vy0 = rect_get_y0(viewcast_box)
-		vx1 = rect_get_x1(viewcast_box)
-		vy1 = rect_get_y1(viewcast_box)
-			
-		draw_set_color(c_ltgrey)
-		draw_primitive_begin(pr_linestrip)
-		draw_vertex(vx0, vy0)
-		draw_vertex(vx1, vy0)
-		draw_vertex(vx1, vy1)
-		draw_vertex(vx0, vy1)
-		draw_vertex(vx0, vy0)
-		draw_primitive_end()
-			
-		vx0 += viewcast_xdirection
-		vy0 += viewcast_ydirection
-		vx1 += viewcast_xdirection
-		vy1 += viewcast_ydirection
-
-		draw_set_color(c_ltgrey)
-		draw_primitive_begin(pr_linestrip)
-		draw_vertex(vx0, vy0)
-		draw_vertex(vx1, vy0)
-		draw_vertex(vx1, vy1)
-		draw_vertex(vx0, vy1)
-		draw_vertex(vx0, vy0)
-		draw_primitive_end()
-			
-		var xd = viewcast_xdirection < 0 ? -1 : +1
-		var yd = viewcast_ydirection < 0 ? -1 : +1
-		var xs = rect_get_wide(viewcast_box_absolute) * 0.5
-		var ys = rect_get_tall(viewcast_box_absolute) * 0.5
-		var xc = rect_get_centre_x(viewcast_box)
-		var yc = rect_get_centre_y(viewcast_box)
-			
-		var px = -yd * xs + xc
-		var py = +xd * ys + yc
-		draw_primitive_begin(pr_linelist)
-		draw_vertex(px, py)
-		draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
-		px = +yd * xs + xc
-		py = -xd * ys + yc
-		draw_vertex(px, py)
-		draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
-		draw_primitive_end()
-			
-	end
-		
-	begin
-		draw_set_color(c_fuchsia)
-		draw_set_alpha(0.5)
-		draw_primitive_begin(pr_trianglelist)
-		for (var i = array_length(player.temp_adj_colliders); i > 0;)
+		//rect_draw(viewcast_box_absolute, viewcast_x, viewcast_y)
+		//rect_draw(viewcast_box_absolute, viewcast_x+viewcast_xdirection, viewcast_y+viewcast_ydirection)
+		rect_draw(viewcast_box)
+		//var rbox = rect_get_temp(viewcast_x, viewcast_y, viewcast_x+viewcast_xdirection, viewcast_y+viewcast_ydirection)
+		var rbox = rect_expand(rect_copy_temp(viewcast_box), viewcast_xdirection, viewcast_ydirection)
+		rect_normalize(rbox)
+		//ray_box_ctx.setup_ray(viewcast_x, viewcast_y, viewcast_xdirection, viewcast_ydirection)
+		ray_box_ctx.setup_box_ray(
+			rect_get_x0(viewcast_box),
+			rect_get_y0(viewcast_box),
+			rect_get_x1(viewcast_box),
+			rect_get_y1(viewcast_box),
+			viewcast_xdirection,
+			viewcast_ydirection
+		)
+		rect_draw(rbox)
+		var colliders = map.get_colliders(rbox)
+		var time = infinity
+		var box = rect_get_temp()
+		var nx = 0
+		var ny = 0
+		for (var i = array_length(colliders); i > 0;)
 		{
-			var collider = player.temp_adj_colliders[--i]
-			if i <= 1
+			var collider = colliders[--i]
+			if ray_box_ctx.test_rect(collider) and ray_box_ctx.hit_time < time
 			{
-				break
+				time = ray_box_ctx.hit_time
+				rect_set_from(box, collider)
+				nx = ray_box_ctx.hit_normal_x
+				ny = ray_box_ctx.hit_normal_y
 			}
-			var x0 = rect_get_x0(collider)
-			var y0 = rect_get_y0(collider)
-			var x1 = rect_get_x1(collider)
-			var y1 = rect_get_y1(collider)
-			
-			
-			draw_vertex(x0, y0)
-			draw_vertex(x1, y0)
-			draw_vertex(x0, y1)
-			draw_vertex(x1, y0)
-			draw_vertex(x0, y1)
-			draw_vertex(x1, y1)
-			
 		}
-		draw_primitive_end()
-		draw_set_alpha(1.0)
+		
+		if true// time < infinity
+		{
+			draw_set_color(time < infinity ? c_white : c_red)
+			rect_draw(box)
+			var hpx = viewcast_x+viewcast_xdirection*time
+			var hpy = viewcast_y+viewcast_ydirection*time 
+			draw_arrow(
+				viewcast_x-1,
+				viewcast_y-1,
+				hpx-1,
+				hpy-1,
+				4/16
+			)
+			rect_draw(viewcast_box_absolute, hpx, hpy)
+			draw_set_color(c_red)
+			draw_arrow(
+				hpx-1,
+				hpy-1,
+				hpx+(nx*2)-1,
+				hpy+(ny*2)-1,
+				1/16
+			)
+		}
+		draw_set_color(c_white)
 	end
+	
+	#endregion
+	
+	#region voxelboxelcastle
+	//boxcast_ctx.setup_ray(
+	//	vec_get_temp(rect_get_centre_x(viewcast_box), rect_get_centre_y(viewcast_box)),
+	//	vec_get_temp(viewcast_xdirection, viewcast_ydirection)
+	//)
+	//__hit_time = infinity
+	//__did_init = false
+	//viewcaster.set_box(viewcast_box)
+	//vec_set_xy(viewcaster.direction, viewcast_xdirection, viewcast_ydirection)
+		
+	//var trace_result = viewcaster.sweep()
+	//__DEBUG_STRING = string_join("\n",
+	//	$"{power(trace_result, 2)}",
+	//	$"{power(viewcast_xdirection, 2)+power(viewcast_ydirection,2)}",
+	//) 
+		
+	//begin
+		
+	//	if __hit_time < infinity
+	//	{
+	//		var vx = boxcast_ctx.originX
+	//		var vy = boxcast_ctx.originY
+	//		var dx = vx+viewcast_xdirection*__hit_time
+	//		var dy = vy+viewcast_ydirection*__hit_time
+	//		draw_arrow(vx-1, vy-1, dx-1, dy-1, 8/16)
+			
+	//		draw_set_color(c_white)
+	//		rect_draw(viewcast_box_absolute, dx, dy)
+	//	}
+		
+	//	var vx0 = viewcaster.box_min[0]
+	//	var vy0 = viewcaster.box_min[1]
+	//	var vx1 = viewcaster.box_max[0]
+	//	var vy1 = viewcaster.box_max[1]
+			
+	//	//draw_set_color(c_white)
+	//	//draw_primitive_begin(pr_linestrip)
+	//	//draw_vertex(vx0, vy0)
+	//	//draw_vertex(vx1, vy0)
+	//	//draw_vertex(vx1, vy1)
+	//	//draw_vertex(vx0, vy1)
+	//	//draw_vertex(vx0, vy0)
+	//	//draw_primitive_end()
+			
+	//	vx0 = rect_get_x0(viewcast_box)
+	//	vy0 = rect_get_y0(viewcast_box)
+	//	vx1 = rect_get_x1(viewcast_box)
+	//	vy1 = rect_get_y1(viewcast_box)
+			
+	//	draw_set_color(c_ltgrey)
+	//	draw_primitive_begin(pr_linestrip)
+	//	draw_vertex(vx0, vy0)
+	//	draw_vertex(vx1, vy0)
+	//	draw_vertex(vx1, vy1)
+	//	draw_vertex(vx0, vy1)
+	//	draw_vertex(vx0, vy0)
+	//	draw_primitive_end()
+			
+	//	vx0 += viewcast_xdirection
+	//	vy0 += viewcast_ydirection
+	//	vx1 += viewcast_xdirection
+	//	vy1 += viewcast_ydirection
+
+	//	draw_set_color(c_ltgrey)
+	//	draw_primitive_begin(pr_linestrip)
+	//	draw_vertex(vx0, vy0)
+	//	draw_vertex(vx1, vy0)
+	//	draw_vertex(vx1, vy1)
+	//	draw_vertex(vx0, vy1)
+	//	draw_vertex(vx0, vy0)
+	//	draw_primitive_end()
+			
+	//	var xd = viewcast_xdirection < 0 ? -1 : +1
+	//	var yd = viewcast_ydirection < 0 ? -1 : +1
+	//	var xs = rect_get_wide(viewcast_box_absolute) * 0.5
+	//	var ys = rect_get_tall(viewcast_box_absolute) * 0.5
+	//	var xc = rect_get_centre_x(viewcast_box)
+	//	var yc = rect_get_centre_y(viewcast_box)
+			
+	//	var px = -yd * xs + xc
+	//	var py = +xd * ys + yc
+	//	draw_primitive_begin(pr_linelist)
+	//	draw_vertex(px, py)
+	//	draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
+	//	px = +yd * xs + xc
+	//	py = -xd * ys + yc
+	//	draw_vertex(px, py)
+	//	draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
+	//	draw_primitive_end()
+			
+	//end
+	#endregion
+	
+	//begin
+	//	draw_set_color(c_fuchsia)
+	//	draw_set_alpha(0.5)
+	//	draw_primitive_begin(pr_trianglelist)
+	//	for (var i = array_length(player.temp_adj_colliders); i > 0;)
+	//	{
+	//		var collider = player.temp_adj_colliders[--i]
+	//		if i <= 1
+	//		{
+	//			break
+	//		}
+	//		var x0 = rect_get_x0(collider)
+	//		var y0 = rect_get_y0(collider)
+	//		var x1 = rect_get_x1(collider)
+	//		var y1 = rect_get_y1(collider)
+			
+			
+	//		draw_vertex(x0, y0)
+	//		draw_vertex(x1, y0)
+	//		draw_vertex(x0, y1)
+	//		draw_vertex(x1, y0)
+	//		draw_vertex(x0, y1)
+	//		draw_vertex(x1, y1)
+			
+	//	}
+	//	draw_primitive_end()
+	//	draw_set_alpha(1.0)
+	//end
 		
 	matrix_set(matrix_world, matrix_build_offset(xx-plrx0, yy-plry0, 0))
 	draw_set_color(c_grey)
@@ -170,7 +268,7 @@ begin
 		0,0,0,
 		1,1,1
 	))
-		
+	
 	matrix_set(matrix_world, matrix_stack_top())
 	matrix_stack_clear()
 	draw_set_color(c_white)
@@ -190,10 +288,10 @@ begin
 		
 	draw_primitive_begin(pr_linelist)
 	draw_set_color(c_red)
-		
+	
 	draw_vertex(abx0, aby0+player.eyeline)
 	draw_vertex(abx1, aby0+player.eyeline)
-		
+	
 	draw_primitive_end()
 	draw_set_color(c_white)
 		

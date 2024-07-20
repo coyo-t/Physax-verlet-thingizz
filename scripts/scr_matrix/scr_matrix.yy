@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_matrix",
   "parent":{
-    "name":"scripts",
-    "path":"folders/scripts.yy",
+    "name":"maths",
+    "path":"folders/scripts/maths.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

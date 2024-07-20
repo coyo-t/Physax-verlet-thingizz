@@ -9,19 +9,24 @@ enum BlockRenderLayerIndex
 
 function Block () constructor {
 	
-	runtime_id/*:Int*/ = 0
+	runtime_id/*Int*/ = 0
 	
-	name/*:String*/ = ""
+	name/*String*/ = ""
 	
-	colour/*:Colour*/ = c_white
+	colour/*Colour*/ = c_white
 	
-	shape/*:Rect*/ = rect_create(0, 0, 1, 1)
+	shape/*Rect*/ = rect_create(0, 0, 1, 1)
 	
-	sound_type/*:BlockSoundType*/ = global.block_soundtypes.none
+	sound_type/*BlockSoundType*/ = global.block_soundtypes.none
 	
-	ground_slipperiness/*:Number*/ = 0.6
+	ground_slipperiness/*Value*/ = 0.6
 	
-	render_layer_index = 0
+	render_layer_index/*BlockRenderLayerIndex*/ = 0
+	
+	static is_solid = function ()
+	{
+		return true
+	}
 	
 	static drawable = function () /*-> bool*/
 	{
@@ -40,12 +45,12 @@ function Block () constructor {
 	
 	static get_colliders = function (_xofs/*:number*/, _yofs/*:number*/)/*->array<Rect>*/
 	{
-		return [ rect_move(rect_copy(shape), _xofs, _yofs) ]
+		return [ rect_move(rect_copy_temp(shape), _xofs, _yofs) ]
 	}
 	
 	static get_render_shapes = function () /*-> array<Rect>*/
 	{
-		return [ rect_copy(shape) ]
+		return [ rect_copy_temp(shape) ]
 	}
 	
 	static is_climbable = function ()/*->Boolean*/
@@ -64,17 +69,22 @@ function AirBlock () : Block() constructor begin
 	
 	ground_slipperiness = 0.6//*0.91
 	
-	static drawable = function () /*-> bool*/
+	static is_solid = function ()
 	{
 		return false
 	}
 	
-	static show_in_palette = function () /*-> bool*/
+	static drawable = function ()/*Boolean*/
+	{
+		return false
+	}
+	
+	static show_in_palette = function ()/*Boolean*/
 	{
 		return false
 	}
 
-	static collideable = function () /*-> bool*/
+	static collideable = function ()/*Boolean*/
 	{
 		return false
 	}
@@ -83,7 +93,7 @@ end
 ///@hint OutOfBoundsBlock extends Block
 function OutOfBoundsBlock () : Block() constructor begin
 	
-	static show_in_palette = function () /*-> bool*/
+	static show_in_palette = function ()/*Boolean*/
 	{
 		return false
 	}
@@ -103,14 +113,11 @@ function FenceBlock () : Block() constructor begin
 	
 	// shape.set_corners(0.5-texels*2, 0, 0.5+texels*2, 1)
 	
+	collider_shape = rect_add_corners(rect_copy(shape), 0, 0, 0, 0.5)
+	
 	static get_colliders = function (_xofs, _yofs)
 	{
-		return [rect_create(
-			rect_get_x0(shape)+_xofs,
-			rect_get_y0(shape)+_yofs,
-			rect_get_x1(shape)+_xofs,
-			rect_get_y1(shape)+_yofs+0.5
-		)]
+		return [ rect_move(rect_copy_temp(collider_shape), _xofs, _yofs) ]
 	}
 end
 
@@ -131,12 +138,15 @@ function StairBlock (_facing) : Block() constructor begin
 	
 	static get_colliders = function (_xofs, _yofs)
 	{
-		return [rect_moved(shape, _xofs, _yofs), rect_moved(shape_top, _xofs, _yofs)]
+		return [
+			rect_move(rect_copy_temp(shape),     _xofs, _yofs),
+			rect_move(rect_copy_temp(shape_top), _xofs, _yofs)
+		]
 	}
 	
 	static get_render_shapes = function ()
 	{
-		return [rect_copy(shape), rect_copy(shape_top)]
+		return [rect_copy_temp(shape), rect_copy_temp(shape_top)]
 	}
 end
 
@@ -151,9 +161,16 @@ function EndlessBlock (_direction) : Block() constructor begin
 		rect_set_corners(shape, 0, 0, 1, +infinity)
 	}
 	
+	display = rect_create(0,0,1,1)
+	
+	static is_solid = function ()
+	{
+		return false
+	}
+	
 	static get_render_shapes = function () /*-> array<Rect>*/
 	{
-		return [ rect_create(0,0,1,1) ]
+		return [ rect_copy_temp(display) ]
 	}
 end
 
@@ -180,14 +197,14 @@ function ColliderCollectionBlock () : Block() constructor begin
 	
 	static __add_collider = function (c)
 	{
-		array_push(shapes, c)
+		array_push(shapes, rect_copy(c))
 	}
 	
 	static __add_colliders = function (/*...:Rect*/)
 	{
 		for (var i = argument_count; i > 0;)
 		{
-			__add_collider(argument[--i])
+			__add_collider(rect_copy(argument[--i]))
 		}
 	}
 	
@@ -199,7 +216,7 @@ function ColliderCollectionBlock () : Block() constructor begin
 		
 		for (var i = sz; (--i) >= 0;)
 		{
-			outs[i] = rect_copy(shapes[i])
+			outs[i] = rect_copy_temp(shapes[i])
 		}
 		return outs
 	}
@@ -211,7 +228,7 @@ function ColliderCollectionBlock () : Block() constructor begin
 		
 		for (var i = sz; (--i) >= 0;)
 		{
-			outs[i] = rect_moved(shapes[i], _xofs, _yofs)
+			outs[i] = rect_move(rect_copy_temp(shapes[i]), _xofs, _yofs)
 		}
 		return outs
 	}

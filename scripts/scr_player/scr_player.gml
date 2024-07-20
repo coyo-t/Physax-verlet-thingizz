@@ -4,9 +4,21 @@
 #macro PLAYER_HEIGHT_SNEAKING (1.5-math_get_epsilon())
 #macro PLAYER_RADIUS (0.6)
 
+function Entity () constructor begin
+	x/*:Number*/ = 0.0
+	y/*:Number*/ = 0.0
+
+	xprevious/*:Number*/ = 0.0
+	yprevious/*:Number*/ = 0.0
+	
+	static tick = function ()
+	{
+	}
+	
+end
 
 
-function Player () constructor begin
+function Player () : Entity() constructor begin
 
 	tempHitbox = rect_create(0,0,0,0)
 	tempRect2 = rect_create(0,0,0,0)
@@ -14,14 +26,11 @@ function Player () constructor begin
 	temp_adj_colliders = []
 	temp_adj_check = rect_create(0,0,0,0)
 
-	x/*:Number*/ = 0.0
-	y/*:Number*/ = 0.0
-
-	xprevious/*:Number*/ = 0.0
-	yprevious/*:Number*/ = 0.0
-
 	wide/*:Number*/ = PLAYER_RADIUS
 	tall/*:Number*/ = PLAYER_HEIGHT_STANDING
+
+	xspeed = 0
+	yspeed = 0
 
 	box = rect_create(0,0,0,0)
 	box_absolute = rect_create(0,0,0,0)
@@ -42,12 +51,6 @@ function Player () constructor begin
 
 	allow_jump_refire = 0
 
-	slide = true
-
-	//wish_xdirection = 0
-	//wish_ydirection = 0
-	//wish_sneak = 0
-
 	fall_hurt_time = 0
 	previous_fall_hurt_time = 0
 
@@ -58,8 +61,6 @@ function Player () constructor begin
 	y_slide_offset = 0
 	walk_dist = 0
 	walk_dist_previous = 0
-	speed_x = 0
-	speed_y = 0
 	fall_distance = 0
 	foot_size = 0.6
 	make_step_sounds = true
@@ -96,6 +97,7 @@ function Player () constructor begin
 		rect_set_from(_box, box_absolute)
 		rect_move(_box, x, y-height_offset+y_slide_offset)
 		eyeline = tall - PLAYER_EYELINE_OFFSET
+		
 	}
 
 	///@self
@@ -112,6 +114,10 @@ function Player () constructor begin
 	{
 		static temp = rect_create(0,0,0,0)
 		static temp2 = rect_create(0,0,0,0)
+		static pred = function (_bloc, _shape, _x, _y)
+		{
+			return _bloc.is_solid()
+		}
 		if _new_height == tall
 		{
 			return true
@@ -128,7 +134,7 @@ function Player () constructor begin
 		rect_set_from(temp, box_absolute)
 		rect_set_y1(box_absolute, _new_height)
 		sync_box_with_co(temp2)
-		if array_length(Game.map.get_colliders(temp2)) > 0
+		if array_length(Game.map.get_colliders(temp2, pred)) > 0
 		{
 			rect_set_from(box_absolute, temp)
 			return false
@@ -146,13 +152,14 @@ function Player () constructor begin
 		var yy = floor(rect_get_y0(box))
 		return Game.map.get_block(xx, yy).is_climbable()
 	}
-
+	
 	///@self
 	static move = function (xDirection/*:number*/, yDirection/*:number*/)
 	{
 		static ORIGINAL_BOX = rect_create(0,0,0,0)
+		static TEMP_VEC = vec_create()
 		temp_adj_colliders = []
-	
+		
 		y_slide_offset *= 0.4
 		var x_begin = x
 		
@@ -166,9 +173,9 @@ function Player () constructor begin
 	
 		rect_set_from(ORIGINAL_BOX, box)
 		rect_set_from(tempHitbox, box)
-		var broadPhase = Game.map.get_colliders(rect_expand(box, xDirection, yDirection));
+		
+		var broadPhase = Game.map.get_colliders(rect_expand(rect_copy_temp(box), xDirection, yDirection));
 		var br_length = array_length(broadPhase)
-		var hitGround
 		begin
 			// y axis
 			for (var i = 0; i < br_length;)
@@ -176,8 +183,7 @@ function Player () constructor begin
 				yDirection = rect_clip_y_collide(broadPhase[i++], box, yDirection)
 			}
 			rect_move(box, 0, yDirection)
-		
-			hitGround = on_ground or (yDirection <> beginYD && beginYD < 0)
+
 			
 			// x axis
 			for (var i = 0; i < br_length;)
@@ -188,10 +194,12 @@ function Player () constructor begin
 		
 		end
 		var xCollided = beginXD <> xDirection
-
+		var yCollided = beginYD <> yDirection
+		var hitGround = on_ground or (yCollided and beginYD < 0)
+		
 		// if we've horizontally collided, try to see if we can go further by moving by
 		// our "foot size" (how tall of a step we can walk up)
-		if foot_size > 0 and hitGround and (on_ground or y_slide_offset < 0.05) and (xCollided)
+		if foot_size > 0 and hitGround and (on_ground or y_slide_offset < 0.05) and xCollided
 		{
 			var bx = xDirection
 			var by = yDirection
@@ -200,18 +208,17 @@ function Player () constructor begin
 		
 			rect_set_from(tempRect2, box)
 			rect_set_from(box, tempHitbox)
-			var cubz = Game.map.get_colliders(rect_expand(box, xDirection, yDirection))
-			var ibox
-		
-			for (var i = 0; i < array_length(cubz);)
+			var broad = Game.map.get_colliders(rect_expand(rect_copy_temp(box), xDirection, yDirection))
+			var bcount = array_length(broad)
+			for (var i = bcount; i > 0;)
 			{
-				yDirection = rect_clip_y_collide(cubz[i++], box, yDirection)
+				yDirection = rect_clip_y_collide(broad[--i], box, yDirection)
 			}
 			rect_move(box, 0, yDirection)
 		
-			for (var i = 0; i < array_length(cubz);)
+			for (var i = bcount; i > 0;)
 			{
-				xDirection = rect_clip_x_collide(cubz[i++], box, xDirection)
+				xDirection = rect_clip_x_collide(broad[--i], box, xDirection)
 			}
 			rect_move(box, xDirection, 0)
 		
@@ -221,19 +228,18 @@ function Player () constructor begin
 				// missing a block when upstepping after hitting our head in the above steps
 				// (and thusly bogusly setting our hitbox to be clipping into it when moving down here)
 			
-				var ttmp = Game.map.get_colliders(rect_expand(box, bx, yDirection))
-			
-				for (var i = 0; i < array_length(ttmp);)
+				var ttmp = Game.map.get_colliders(rect_expand(rect_copy_temp(box), bx, yDirection))
+				for (var i = array_length(ttmp); i > 0;)
 				{
-					yDirection = rect_clip_y_collide(ttmp[i++], box, yDirection)
+					yDirection = rect_clip_y_collide(ttmp[--i], box, yDirection)
 				}
 				rect_move(box, 0, yDirection)
 			}
 
 			if abs(bx) >= abs(xDirection)
 			{
-				xDirection = bx;
-				yDirection = by;
+				xDirection = bx
+				yDirection = by
 				rect_set_from(box, tempRect2)
 			}
 			else
@@ -255,10 +261,10 @@ function Player () constructor begin
 		//z = hitbox.getCentrez();
 		
 		xCollided = beginXD <> xDirection
+		yCollided = beginYD <> yDirection
 		
 		horizontal_collision = xCollided
-		var verticalCollision = yDirection <> beginYD
-		on_ground = verticalCollision and beginYD < 0
+		on_ground = yCollided and beginYD < 0
 	
 		var did_land = false
 		if (on_ground)
@@ -287,11 +293,11 @@ function Player () constructor begin
 
 		if xCollided
 		{
-			speed_x = 0
+			xspeed = 0
 		}
-		if verticalCollision
+		if yCollided
 		{
-			speed_y = 0
+			yspeed = 0
 		}
 		var diff_x = x - x_begin
 		walk_dist += abs(diff_x) * 0.6
@@ -324,7 +330,7 @@ function Player () constructor begin
 		var ysign = sign(beginYD)
 	
 		var closure = {
-			occupy: rect_create(
+			occupy: rect_get_temp(
 				floor(rect_get_x0(box)),
 				floor(rect_get_y0(box)),
 				floor(rect_get_x1(box)+1),
@@ -332,7 +338,7 @@ function Player () constructor begin
 			),
 			pb: box,
 		}
-		var check = rect_expand(box, xsign, ysign)
+		var check = rect_expand(rect_copy_temp(box), xsign, ysign)
 		temp_adj_colliders = Game.map.get_colliders(
 			check,
 			method(closure, function (_bloc, _shape, _x, _y) {
@@ -404,9 +410,9 @@ function Player () constructor begin
 		{
 			var jpower = 0.42
 			//TODO:THIS
-			if true//array_length(map.get_colliders(rect_expand(player_box, 0, 0.01))) <= 0
+			if true//array_length(map.get_colliders(rect_expanded(player_box, 0, 0.01))) <= 0
 			{
-				speed_y = jpower
+				yspeed = jpower
 				var sfx
 				var pitch = 1
 
@@ -437,7 +443,7 @@ function Player () constructor begin
 		var ss = wish_xd * (on_ground ? 0.1 * basis: 0.02)
 		if abs(ss) >= 0.01
 		{
-			speed_x += ss
+			xspeed += ss
 		}
 		//moveRelative(x_direction, z_direction, onGround ? 0.1f : 0.02f);
 	
@@ -445,7 +451,7 @@ function Player () constructor begin
 		if is_inside_climbable()
 		{
 			fall_distance = 0
-			speed_y = max(speed_y, -0.15)
+			yspeed = max(yspeed, -0.15)
 		}
 	
 		var ground_frict = 0.91
@@ -457,36 +463,36 @@ function Player () constructor begin
 			ground_frict *= onWhat.ground_slipperiness
 		}
 	
-		move(speed_x, speed_y)
+		move(xspeed, yspeed)
 	
 		if is_inside_climbable()
 		{
 			if Game.wish_sneak > 0
 			{
-				speed_y = 0
+				yspeed = 0
 				screw_gravity = true
 			}
 			if horizontal_collision or Game.wish_ydirection <> 0
 			{
-				speed_y = 0.2
+				yspeed = 0.2
 				screw_gravity = false
 			}
 		}
 	
 		if not screw_gravity
 		{
-			speed_y -= 0.08
+			yspeed -= 0.08
 		}
 	
-		speed_x *= ground_frict//0.91
-		speed_y *= 0.98
+		xspeed *= ground_frict//0.91
+		yspeed *= 0.98
 	
-		var hmoment = min(speed_x, 0.1)
+		var hmoment = min(xspeed, 0.1)
 		var fallangle = 0
 		if not on_ground
 		{
 			hmoment = 0
-			fallangle = arctan(-speed_y * 0.2) * 15
+			fallangle = arctan(-yspeed * 0.2) * 15
 		}
 		bob += (hmoment-bob) * 0.4
 		tilt += (fallangle-tilt) * 0.8

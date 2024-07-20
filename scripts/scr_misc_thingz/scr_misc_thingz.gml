@@ -7,6 +7,14 @@ function array_choose (_array)
 	return _array[irandom(array_length(_array)-1)]
 }
 
+function SimpleCache () constructor begin
+	array = []
+	cursor = 0
+	static reset_cursor = function ()
+	{
+		cursor = 0
+	}
+end
 
 // #mfunc iterate(varname, arraylist) as "keyword" \
 // begin\

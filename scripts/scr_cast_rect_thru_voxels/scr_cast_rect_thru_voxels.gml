@@ -8,67 +8,70 @@
 // original raycast implementation: https://github.com/fenomas/fast-voxel-raycast
 // original raycast paper: http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 
-
-/*typealias GetVoxelCallback = (x:Int, y:Int) -> Boolean*/
-/*typealias OnCollisionCallback = (distance:Number, axis:Int, direction:Vec, remaining:Vec) -> Boolean*/
+/*
+typealias GetVoxelCallback = (x:Int, y:Int) -> Boolean
+typealias OnCollisionCallback = (distance:Value, axis:Int, direction:Vec, remaining:Vec) -> Boolean
+*/
 
 function RectVoxelSweeper (
-	box/*:Rect*/,
-	dir/*:Vec*/,
-	get_voxel_callback/*:GetVoxelCallback*/,
-	on_collision_callback/*:OnCollisionCallback*/
+	box/*Rect*/,
+	dir/*Vec*/,
+	get_voxel_callback/*GetVoxelCallback*/,
+	on_collision_callback/*OnCollisionCallback*/
 )
 constructor begin
 	
 	static DEBUG_RECT = rect_create(0,0,0,0)
 	
-	callback_get_voxel/*:GetVoxelCallback*/ = get_voxel_callback
-	callback_on_collision/*:OnCollisionCallback*/ = on_collision_callback
+	callback_get_voxel/*GetVoxelCallback*/ = get_voxel_callback
+	callback_on_collision/*OnCollisionCallback*/ = on_collision_callback
 	
-	result/*:Vec*/ = vec_create()
+	result/*Vec*/ = vec_create()
 	
-	box_original/*:Rect*/ = rect_copy(box)
-	box_min/*:Vec*/ = rect_get_min_corner(box)
-	box_max/*:Vec*/ = rect_get_max_corner(box)
+	box_original/*Rect*/ = rect_copy(box)
+	box_min/*Vec*/ = rect_get_min_corner(box)
+	box_max/*Vec*/ = rect_get_max_corner(box)
 	
-	direction/*:Vec*/ = vec_copy(dir)
+	direction/*Vec*/ = vec_copy(dir)
 	
-	step/*:Vec*/ = vec_create()
-	normalized/*:Vec*/ = vec_create()
+	step/*Vec*/ = vec_create()
+	normalized/*Vec*/ = vec_create()
 	
-	//leading_corner/*:Vec*/ = vec_create()
-	leading_indices/*:Vec*/ = vec_create()
-	trailing_corner/*:Vec*/ = vec_create()
-	trailing_indices/*:Vec*/ = vec_create()
+	leading_corner/*Vec*/ = vec_create()
+	leading_indices/*Vec*/ = vec_create()
+	trailing_corner/*Vec*/ = vec_create()
+	trailing_indices/*Vec*/ = vec_create()
 	
-	time/*:Number*/ = 0.0
-	time_max/*:Number*/ = 0.0
-	time_accumulator/*:Number*/ = 0.0
-	time_delta/*:Vec*/ = vec_create()
-	time_next/*:Vec*/ = vec_create()
+	time/*Value*/ = 0.0
+	time_max/*Value*/ = 0.0
+	time_accumulator/*Value*/ = 0.0
+	time_delta/*Vec*/ = vec_create()
+	time_next/*Vec*/ = vec_create()
 	
-	axis/*:Int*/ = 0
+	axis/*Int*/ = 0
 	
-	hard_time_limit/*:Number*/ = infinity
+	hard_time_limit/*Value*/ = infinity
+	hard_time_limit_s/*Value*/ = infinity
 	
-	static set_hard_time_limit = function (_v/*:Number*/)
+	static set_hard_time_limit = function (_v/*Value*/)
 	{
 		set_hard_time_limit_sqr(_v*_v)
 	}
 	
-	static set_hard_time_limit_sqr = function (_v/*:Number*/)
+	static set_hard_time_limit_sqr = function (_v/*Value*/)
 	{
 		hard_time_limit = _v
+		hard_time_limit_s = sqrt(_v)
 	}
 	
-	static set_box = function (_box/*:Rect*/)
+	static set_box = function (_box/*Rect*/)
 	{
 		rect_set_from(box_original, _box)
 		vec_set_from(box_min, rect_get_min_corner(_box))
 		vec_set_from(box_max, rect_get_max_corner(_box))
 	}
 	
-	static run = function () /*-> Number*/
+	static run = function ()/*Value*/
 	{
 		time = 0.0
 		time_max = 0.0
@@ -86,7 +89,7 @@ constructor begin
 		axis = advance_step()
 
 		// loop along raycast vector
-		while time <= time_max
+		while time <= min(time_max, hard_time_limit_s)
 		{
 			// sweeps over leading face of AABB
 			if check_collide(axis)
@@ -126,23 +129,23 @@ constructor begin
 			var dir = direction[i] >= 0
 			step[i] = dir ? 1 : -1
 			// trailing / trailing edge coords
-			var lead = dir ? box_max[i] : box_min[i]
+			leading_corner[i] = dir ? box_max[i] : box_min[i]
 			trailing_corner[i] = dir ? box_min[i] : box_max[i]
 			// int values of lead/trail edges
-			leading_indices[i] = leading_edge_to_int(lead, step[i])
+			leading_indices[i] = leading_edge_to_int(leading_corner[i], step[i])
 			trailing_indices[i] = trailing_edge_to_int(trailing_corner[i], step[i])
 			
 			normalized[i] = direction[i] / time_max
 			// distance along t required to move one voxel in each axis
 			time_delta[i] = normalized[i] == 0 ? infinity : abs(1 / normalized[i])
 			// location of nearest voxel boundary, in units of t 
-			var dist = dir ? (leading_indices[i] + 1 - lead) : (lead - leading_indices[i])
+			var dist = dir ? (leading_indices[i] + 1 - leading_corner[i]) : (leading_corner[i] - leading_indices[i])
 			time_next[i] = (time_delta[i] < infinity) ? time_delta[i] * dist : infinity
 		}
 	}
 	
 	// advance to next voxel boundary, and return which axis was stepped
-	static advance_step = function () /*-> Int*/
+	static advance_step = function ()/*Int*/
 	{
 		var naxis = time_next[0] < time_next[1] ? 0 : 1
 		
@@ -160,7 +163,7 @@ constructor begin
 	}
 	
 	// check for collisions - iterate over the leading face on the advancing axis
-	static check_collide = function (i_axis/*:Int*/) /*-> Boolean*/
+	static check_collide = function (i_axis/*Int*/)/*Boolean*/
 	{
 		var stepx = step[0]
 		var x0 = (i_axis == 0) ? leading_indices[0] : trailing_indices[0]
@@ -184,9 +187,9 @@ constructor begin
 	}
 	
 	// on collision - call the callback and return or set up for the next sweep
-	static on_collide = function () /*-> Boolean*/
+	static on_collide = function ()/*Boolean*/
 	{
-		static remaining/*:Vec*/ = vec_create()
+		static remaining/*Vec*/ = vec_create()
 		// set up for callback
 		time_accumulator += time
 		var dir = step[axis]
@@ -204,14 +207,8 @@ constructor begin
 
 		// set leading edge of stepped axis exactly to voxel boundary
 		// else we'll sometimes rounding error beyond it
-		if dir > 0
-		{
-			box_max[axis] = floor(box_max[axis] + 0.5)
-		}
-		else
-		{
-			box_min[axis] = floor(box_min[axis] + 0.5)
-		}
+		var to_set = dir > 0 ? box_max : box_min
+		to_set[axis] = floor(to_set[axis] + 0.5)
 
 		// call back to let client update the "left to go" vector
 		var res = callback_on_collision(time_accumulator, axis, dir, remaining)
@@ -229,17 +226,17 @@ constructor begin
 		return time_max <= 0
 	}
 	
-	static leading_edge_to_int = function(coord/*:Number*/, step/*:Int*/) /*-> Int*/
+	static leading_edge_to_int = function(coord/*Value*/, step/*Int*/)/*Int*/
 	{
-		return floor(coord - step * EPS)
+		return floor(coord - step * math_get_epsilon())
 	}
 	
-	static trailing_edge_to_int = function (coord/*:Number*/, step/*:Int*/) /*-> Int*/
+	static trailing_edge_to_int = function (coord/*Value*/, step/*Int*/)/*Int*/
 	{
-		return floor(coord + step * EPS)
+		return floor(coord + step * math_get_epsilon())
 	}
 	
-	static sweep = function (dont_translate/*:Boolean*/=false) /*->Number*/
+	static sweep = function (dont_translate/*Boolean*/=false)/*Number*/
 	// (getVoxel, box, direction, callback, noTranslate)
 	{
 		// run sweep implementation

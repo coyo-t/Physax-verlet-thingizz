@@ -6,9 +6,36 @@ enum Vec {
 	sizeof
 }
 
+function __vec_get_cache ()
+{
+	static CACHE = new SimpleCache()
+	return CACHE
+}
+
 function vec_create (_x/*:number*/=0, _y/*:number*/=0) /*-> Vec*/
 {
 	return [_x, _y]
+}
+
+function vec_get_temp (_x=0, _y=0)
+{
+	var cache = __vec_get_cache()
+	var ca = cache.array
+	if cache.cursor >= array_length(cache.array)
+	{
+		array_push(ca, vec_create())
+	}
+	return vec_set_xy(ca[cache.cursor++], _x, _y)
+}
+
+function vec_copy (_self/*:Vec*/) /*-> Vec*/
+{
+	return vec_create(_self[Vec.x], _self[Vec.y])
+}
+
+function vec_copy_temp (_self/*Vec*/)/*->Vec*/
+{
+	return vec_get_temp(_self[0], _self[1])
 }
 
 function vec_get_x (_self/*:Vec*/) /*-> number*/
@@ -76,11 +103,6 @@ function vec_add_xy (_self/*:Vec*/, _x/*:number*/, _y/*:number*/) /*-> Vec*/
 function vec_add_vec (_self/*:Vec*/, _other/*:Vec*/) /*-> Vec*/
 {
 	return vec_add_xy(_self, _other[Vec.x], _other[Vec.y])
-}
-
-function vec_copy (_self/*:Vec*/) /*-> Vec*/
-{
-	return vec_create(_self[Vec.x], _self[Vec.y])
 }
 
 

@@ -1,4 +1,5 @@
 
+
 enum Rect
 {
 	x0,
@@ -8,9 +9,53 @@ enum Rect
 	sizeof
 }
 
-function rect_create (_x0/*:number*/, _y0/*:number*/, _x1/*:number*/, _y1/*:number*/) /*-> Rect*/
+function __rect_get_cache ()
+{
+	static CACHE = new SimpleCache()
+	return CACHE
+}
+
+function rect_create (_x0=0/*:Val*/, _y0=0/*:Val*/, _x1=1/*:Val*/, _y1=1/*:Val*/) /*-> Rect*/
 {
 	return [_x0, _y0, _x1, _y1]
+}
+
+///@returns {Array<Real>
+function rect_get_temp (_x0=0, _y0=0, _x1=1, _y1=1)
+{
+	var cache = __rect_get_cache()
+	var ca = cache.array
+	if cache.cursor >= array_length(cache.array)
+	{
+		array_push(ca, rect_create(0,0,0,0))
+	}
+	return rect_set_corners(ca[cache.cursor++], _x0, _y0, _x1, _y1)
+}
+
+function rect_copy (_self/*:Rect*/) /*-> Rect*/
+{
+	return rect_create(_self[Rect.x0], _self[Rect.y0], _self[Rect.x1], _self[Rect.y1])
+}
+
+function rect_copy_temp (_self/*Rect*/)
+{
+	return rect_get_temp(_self[0], _self[1], _self[2], _self[3])
+}
+
+function rect_normalize (_self/*Rect*/)/*Rect*/
+{
+	var x0 = _self[0]
+	var y0 = _self[1]
+	var x1 = _self[2]
+	var y1 = _self[3]
+	
+	return rect_set_corners(
+		_self,
+		min(x0, x1),
+		min(y0, y1),
+		max(x0, x1),
+		max(y0, y1)
+	)
 }
 
 function rect_get_min_corner (_self/*:Rect*/) /*-> Vec*/
@@ -67,7 +112,7 @@ function rect_set_y1 (_self/*:Rect*/, v/*:number*/) /*-> Rect*/
 	return _self
 }
 
-function rect_set_corners (_self/*:Rect*/, _x0/*:number*/, _y0/*:number*/, _x1/*:number*/, _y1/*:number*/) /*-> Rect*/
+function rect_set_corners (_self/*:Rect*/, _x0/*:Val*/, _y0/*:Val*/, _x1/*:Val*/, _y1/*:Val*/)/*->Rect*/
 {
 	_self[@Rect.x0] = _x0
 	_self[@Rect.y0] = _y0
@@ -101,24 +146,37 @@ function rect_get_centre_y (_self/*:Rect*/) /*-> number*/
 	return (_self[Rect.y0] + _self[Rect.y1]) * 0.5
 }
 
-function rect_overlapping (_self/*:Rect*/, _other/*:Rect*/) /*-> bool*/
+function rect_add_corners (_self/*Rect*/, _x0, _y0, _x1, _y1)/*->Rect*/
 {
-	return _other[Rect.x1]>_self[Rect.x0]&&_other[Rect.x0]<_self[Rect.x1]&&_other[Rect.y1]>_self[Rect.y0]&&_other[Rect.y0]<_self[Rect.y1]
+	_self[0] += _x0
+	_self[1] += _y0
+	_self[2] += _x1
+	_self[3] += _y1
+	return _self
 }
 
-function rect_copy (_self/*:Rect*/) /*-> Rect*/
+function rect_overlapping (_self/*:Rect*/, _other/*:Rect*/) /*-> bool*/
 {
-	return rect_create(_self[Rect.x0], _self[Rect.y0], _self[Rect.x1], _self[Rect.y1])
+	return (
+		_other[Rect.x1]>_self[Rect.x0] and
+		_other[Rect.x0]<_self[Rect.x1] and
+		_other[Rect.y1]>_self[Rect.y0] and
+		_other[Rect.y0]<_self[Rect.y1]
+	)
 }
 
 function rect_expand (_self/*:Rect*/, xofs/*:number*/, yofs/*:number*/) /*-> Rect*/
 {
-	return rect_create(
-		_self[Rect.x0] + (xofs < 0 ? xofs : 0),
-		_self[Rect.y0] + (yofs < 0 ? yofs : 0),
-		_self[Rect.x1] + (xofs > 0 ? xofs : 0),
-		_self[Rect.y1] + (yofs > 0 ? yofs : 0)
-	)
+	_self[Rect.x0] += (xofs < 0 ? xofs : 0)
+	_self[Rect.y0] += (yofs < 0 ? yofs : 0)
+	_self[Rect.x1] += (xofs > 0 ? xofs : 0)
+	_self[Rect.y1] += (yofs > 0 ? yofs : 0)
+	return _self
+}
+
+function rect_expanded (_self/*:Rect*/, xofs/*:number*/, yofs/*:number*/) /*-> Rect*/
+{
+	return rect_expand(rect_copy(_self), xofs, yofs)
 }
 
 function rect_move (_self/*:Rect*/, _x/*:number*/, _y/*:number*/) /*-> Rect*/
@@ -183,12 +241,12 @@ function rect_clip_y_collide (_self/*:Rect*/, c/*:Rect*/, ya/*:number*/) /*-> nu
 	return ya
 }
 
-function rect_draw (_self/*:Rect*/)
+function rect_draw (_self/*Rect*/, _x/*Val*/=0, _y/*Val*/=0)
 {
-	var x0 = _self[0]
-	var y0 = _self[1]
-	var x1 = _self[2]
-	var y1 = _self[3]
+	var x0 = _self[0]+_x
+	var y0 = _self[1]+_y
+	var x1 = _self[2]+_x
+	var y1 = _self[3]+_y
 	draw_primitive_begin(pr_linestrip)
 	draw_vertex(x0, y0)
 	draw_vertex(x1, y0)

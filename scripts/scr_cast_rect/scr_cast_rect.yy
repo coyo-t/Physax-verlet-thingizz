@@ -1,12 +1,12 @@
 {
   "$GMScript":"",
-  "%Name":"scr_rect",
+  "%Name":"scr_cast_rect",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_rect",
+  "name":"scr_cast_rect",
   "parent":{
-    "name":"maths",
-    "path":"folders/scripts/maths.yy",
+    "name":"Physax verlet thingizz",
+    "path":"Physax verlet thingizz.yyp",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",
