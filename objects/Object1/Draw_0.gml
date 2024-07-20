@@ -34,23 +34,28 @@ begin
 	begin
 		matrix_push(matrix_world)
 		var tfac = timer.get_tfac()
-		var xx = lerp(player_previous_box[Rect.x0], player_box[Rect.x0], tfac)
-		var yy = lerp(player_previous_box[Rect.y0], player_box[Rect.y0], tfac)
+		var plrx0 = rect_get_x0(player_box)
+		var plry0 = rect_get_y0(player_box)
+		var plrx1 = rect_get_x1(player_box)
+		var plry1 = rect_get_y1(player_box)
+		
+		var xx = lerp(rect_get_x0(player_previous_box), plrx0, tfac)
+		var yy = lerp(rect_get_y0(player_previous_box), plry0, tfac)
 		
 		matrix_set(matrix_world, matrix_build(
-			xx-player_box[Rect.x0],
-			yy-player_box[Rect.y0],
+			xx-plrx0,
+			yy-plry0,
 			0,
 			0,0,0,
 			1,1,1
 		))
 		draw_primitive_begin(pr_linestrip)
 		draw_set_color(c_grey)
-		draw_vertex(player_box[Rect.x0], player_box[Rect.y0])
-		draw_vertex(player_box[Rect.x1], player_box[Rect.y0])
-		draw_vertex(player_box[Rect.x1], player_box[Rect.y1])
-		draw_vertex(player_box[Rect.x0], player_box[Rect.y1])
-		draw_vertex(player_box[Rect.x0], player_box[Rect.y0])
+		draw_vertex(plrx0, plry0)
+		draw_vertex(plrx1, plry0)
+		draw_vertex(plrx1, plry1)
+		draw_vertex(plrx0, plry1)
+		draw_vertex(plrx0, plry0)
 		draw_primitive_end()
 		xx = lerp(player_xprevious, player_x, tfac)
 		yy = lerp(player_yprevious, player_y, tfac)
@@ -63,16 +68,29 @@ begin
 		))
 		draw_primitive_begin(pr_linestrip)
 		draw_set_color(c_white)
-		draw_vertex(player_box_absolute[Rect.x0], player_box_absolute[Rect.y0])
-		draw_vertex(player_box_absolute[Rect.x1], player_box_absolute[Rect.y0])
-		draw_vertex(player_box_absolute[Rect.x1], player_box_absolute[Rect.y1])
-		draw_vertex(player_box_absolute[Rect.x0], player_box_absolute[Rect.y1])
-		draw_vertex(player_box_absolute[Rect.x0], player_box_absolute[Rect.y0])
+		var abx0 = rect_get_x0(player_box_absolute)
+		var aby0 = rect_get_y0(player_box_absolute)
+		var abx1 = rect_get_x1(player_box_absolute)
+		var aby1 = rect_get_y1(player_box_absolute)
+		draw_vertex(abx0, aby0)
+		draw_vertex(abx1, aby0)
+		draw_vertex(abx1, aby1)
+		draw_vertex(abx0, aby1)
+		draw_vertex(abx0, aby0)
 		draw_primitive_end()
+		
+		draw_primitive_begin(pr_linelist)
+		draw_set_color(c_red)
+		
+		draw_vertex(abx0, aby0+player_eyeline)
+		draw_vertex(abx1, aby0+player_eyeline)
+		
+		draw_primitive_end()
+		draw_set_color(c_white)
 		
 		matrix_pop(matrix_world)
 		
-		sz = 2
+		sz = 0.25
 		draw_primitive_begin(pr_linelist)
 		draw_set_color(c_red)
 		draw_vertex(xx, yy)
@@ -86,17 +104,6 @@ begin
 	end
 	
 	
-	var colliders/*:array<Rect>*/ = map.get_colliders(player_box)
-	draw_set_color(c_orange)
-	array_foreach(colliders, function(collider/*:Rect*/) /*=>*/ {
-		draw_primitive_begin(pr_linestrip)
-		draw_vertex(collider[Rect.x0],collider[Rect.y0])
-		draw_vertex(collider[Rect.x1],collider[Rect.y0])
-		draw_vertex(collider[Rect.x1],collider[Rect.y1])
-		draw_vertex(collider[Rect.x0],collider[Rect.y1])
-		draw_vertex(collider[Rect.x0],collider[Rect.y0])
-		draw_primitive_end()
-	})
 	draw_set_color(c_white)
 
 end

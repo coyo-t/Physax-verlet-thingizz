@@ -33,17 +33,19 @@ function world_to_screen (_x, _y, _z, v, p)
 	return [sx, -sy, w];
 }
 
-__M_STACK_W = array_create(16)
-__M_CURSOR_W = 0
+global.__M_STACK_W = array_create(16)
+global.__M_CURSOR_W = 0
 
-__M_STACK_V = array_create(16)
-__M_CURSOR_V = 0
+global.__M_STACK_V = array_create(16)
+global.__M_CURSOR_V = 0
 
-__M_STACK_P = array_create(16)
-__M_CURSOR_P = 0
+global.__M_STACK_P = array_create(16)
+global.__M_CURSOR_P = 0
+
+global.__M_MODE_CURRENT = matrix_world
 
 
-function matrix_push (which)
+function matrix_push (which=global.__M_MODE_CURRENT)
 {
 	switch (which)
 	{
@@ -60,7 +62,7 @@ function matrix_push (which)
 }
 
 
-function matrix_pop (which)
+function matrix_pop (which=global.__M_MODE_CURRENT)
 {
 	switch (which)
 	{

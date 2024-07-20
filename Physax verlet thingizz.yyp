@@ -10,6 +10,7 @@
   },
   "defaultScriptType":1,
   "Folders":[
+    {"$GMFolder":"","%Name":"scripts","folderPath":"folders/scripts.yy","name":"scripts","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"sound","folderPath":"folders/sound.yy","name":"sound","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"step","folderPath":"folders/sound/step.yy","name":"step","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
@@ -31,7 +32,7 @@
     {"id":{"name":"scr_map","path":"scripts/scr_map/scr_map.yy",},},
     {"id":{"name":"scr_matrix","path":"scripts/scr_matrix/scr_matrix.yy",},},
     {"id":{"name":"scr_misc_thingz","path":"scripts/scr_misc_thingz/scr_misc_thingz.yy",},},
-    {"id":{"name":"scr_shapez","path":"scripts/scr_shapez/scr_shapez.yy",},},
+    {"id":{"name":"scr_rect","path":"scripts/scr_rect/scr_rect.yy",},},
     {"id":{"name":"scr_sound_util","path":"scripts/scr_sound_util/scr_sound_util.yy",},},
     {"id":{"name":"scr_timer","path":"scripts/scr_timer/scr_timer.yy",},},
     {"id":{"name":"scr_vec","path":"scripts/scr_vec/scr_vec.yy",},},

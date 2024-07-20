@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_cast_rect_thru_voxels",
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"scripts",
+    "path":"folders/scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

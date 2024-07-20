@@ -5,7 +5,7 @@ if mdelta <> 0
 {
 	if keyboard_check(vk_shift)
 	{
-		current_paint++
+		current_paint += mdelta
 		if current_paint >= array_length(palette)
 		{
 			current_paint = 0

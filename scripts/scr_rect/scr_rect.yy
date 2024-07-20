@@ -1,12 +1,12 @@
 {
   "$GMScript":"",
-  "%Name":"scr_shapez",
+  "%Name":"scr_rect",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_shapez",
+  "name":"scr_rect",
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"scripts",
+    "path":"folders/scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

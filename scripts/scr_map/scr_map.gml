@@ -1,6 +1,6 @@
-//!#import array.* in Array
-//!#import ds_grid.* in DsGrid
-//!#import rect.* in Rect
+// #import array.* in Array
+// #import ds_grid.* in DsGrid
+// #import rect.* in Rect
 
 vertex_format_begin()
 vertex_format_add_position_3d()
@@ -50,7 +50,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		{
 			return get_out_of_bounds_type(_x, _y)
 		}
-		return block_by_id_mf0 blocks[# _x, _y] block_by_id_mf1
+		return blocks_get_by_id(blocks[# _x, _y])
 	}
 
 	static rebuild = function ()
@@ -65,21 +65,21 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		{
 			for (var xx = 0; xx < wide; xx++)
 			{
-				var block/*:Block*/ = get_block(xx, yy)
-				if not block_is_renderable(block)
+				var block = get_block(xx, yy)
+				if not block.drawable()
 				{
 					continue
 				}
-				var shapes/*:Array<Rect>*/ = block.get_render_shapes()
+				var shapes = block.get_render_shapes()
 				var cbasecol = block.colour
 				var c = ((xx&1)^(yy&1)==0) ? cbasecol : merge_color(cbasecol, c_black, 0.1)
 				for (var i = array_length(shapes); i > 0;)
 				{
-					var shape/*:Rect*/ = shapes[--i]
-					var x0 = xx+shape[Rect.x0]
-					var y0 = yy+shape[Rect.y0]
-					var x1 = xx+shape[Rect.x1]
-					var y1 = yy+shape[Rect.y1]
+					var shape = shapes[--i]
+					var x0 = xx+rect_get_x0(shape)
+					var y0 = yy+rect_get_y0(shape)
+					var x1 = xx+rect_get_x1(shape)
+					var y1 = yy+rect_get_y1(shape)
 					
 					vertex_position_3d(vb, x0, y0, 0)
 					vertex_color(vb, c, 1)
@@ -113,27 +113,27 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 	{
 		static TEMP = rect_create(0,0,0,0)
 
-		var x0 = floor(box[Rect.x0]+EPS-1)
-		var x1 = floor(box[Rect.x1]+1+EPS)
+		var x0 = floor(rect_get_x0(box)+EPS-1)
+		var x1 = floor(rect_get_x1(box)+1+EPS)
 		
-		var y0 = floor(box[Rect.y0]+EPS-1)
-		var y1 = floor(box[Rect.y1]+1+EPS)
+		var y0 = floor(rect_get_y0(box)+EPS-1)
+		var y1 = floor(rect_get_y1(box)+1+EPS)
 		
 		var outs/*: Array<Rect>*/ = []
 		for (var yy = y0; yy < y1; yy++)
 		{
 			for (var xx = x0; xx < x1; xx++)
 			{
-				var bloc/*:Block*/ = get_block(xx, yy)
+				var bloc = get_block(xx, yy)
 				if not bloc.collideable()
 				{
 					continue
 				}
-				var shapes/*: Array<Rect>*/ = bloc.get_colliders(xx, yy)
+				var shapes = bloc.get_colliders(xx, yy)
 				
 				for (var bb = array_length(shapes); bb > 0;)
 				{
-					var shape/*:Rect*/ = shapes[--bb]
+					var shape = shapes[--bb]
 					if rect_overlapping(shape, box)
 					{
 						array_push(outs, shape)

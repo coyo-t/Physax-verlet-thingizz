@@ -20,8 +20,8 @@ begin
 	draw_primitive_begin(pr_trianglelist)
 	
 	var hofs = (1-rect_get_tall(pshape)) * 1.1
-	var x0 = pshape[Rect.x0]
-	var x1 = pshape[Rect.x1]
+	var x0 = rect_get_x0(pshape)
+	var x1 = rect_get_x1(pshape)
 	// top
 	draw_vertex_color(0, 0-hofs, topc, 1)
 	draw_vertex_color(1, 0.5-hofs, topc, 1)

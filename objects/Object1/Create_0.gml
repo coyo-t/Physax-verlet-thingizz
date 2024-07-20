@@ -54,6 +54,8 @@ player_box = rect_create(0,0,0,0) ///@is{Rect}
 player_box_absolute = rect_create(0,0,0,0) ///@is{Rect}
 player_previous_box = rect_create(0,0,0,0) ///@is{Rect}
 
+player_eyeline = player_tall - 0.2
+
 allow_jump_refire = 0
 
 slide = true
@@ -104,8 +106,8 @@ function sync_player_box_with_co ()
 
 function sync_player_co_with_box ()
 {
-	player_x = (player_box[Rect.x0] + player_box[Rect.x1]) * 0.5
-	player_y = player_box[Rect.y0] + height_offset - y_slide_offset
+	player_x = rect_get_centre_x(player_box)
+	player_y = rect_get_y0(player_box) + height_offset - y_slide_offset
 }
 
 //update_player_co(map.wide * 0.5, map.tall)
@@ -161,8 +163,8 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 		
 		rect_set_from(tempRect2, player_box)
 		rect_set_from(player_box, tempHitbox)
-		var cubz/*: array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection))
-		var box/*:Rect*/
+		var cubz = map.get_colliders(rect_expand(player_box, xDirection, yDirection))
+		var box
 		
 		for (var i = 0; i < array_length(cubz);)
 		{
@@ -184,7 +186,7 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 			// missing a block when upstepping after hitting our head in the above steps
 			// (and thusly bogusly setting our hitbox to be clipping into it when moving down here)
 			
-			var ttmp/*: array<Rect>*/ = map.get_colliders(rect_expand(player_box, bx, yDirection))
+			var ttmp = map.get_colliders(rect_expand(player_box, bx, yDirection))
 			
 			for (var i = 0; i < array_length(ttmp);)
 			{
@@ -206,8 +208,8 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 			// this is to mask the jitters from walking across a corner like this:
 			// Xx (x is the floor, X is 1 block above)
 			// x
-			var slideDelta = player_box[Rect.y0] - tempRect2[Rect.y0]
-			if slideDelta > 0 and (player_box[Rect.y0] <> tempHitbox[Rect.y0])
+			var slideDelta = rect_get_y0(player_box) - rect_get_y0(tempRect2)
+			if slideDelta > 0 and (rect_get_y0(player_box) <> rect_get_y0(tempHitbox))
 			{
 				y_slide_offset += slideDelta + 0.01
 			}

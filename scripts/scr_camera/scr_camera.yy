@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_camera",
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"scripts",
+    "path":"folders/scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",
