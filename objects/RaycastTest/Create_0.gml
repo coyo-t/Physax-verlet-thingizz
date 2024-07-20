@@ -485,6 +485,8 @@ function trace_hull (_get_bloc_callback)
 		rect_y1(src_rect)
 	)
 	
+	var box_src_min = vec_get_temp(rect_x0(src_rect), rect_y0(src_rect))
+	var box_src_max = vec_get_temp(rect_x1(src_rect), rect_y1(src_rect))
 	var box_min = vec_get_temp(rect_x0(rect), rect_y0(rect))
 	var box_max = vec_get_temp(rect_x1(rect), rect_y1(rect))
 	
@@ -503,27 +505,27 @@ function trace_hull (_get_bloc_callback)
 	// check rect
 	// not ellegant, but "works" :/
 	var did = false
-	var xjit = step[Vec.x] * math_get_epsilon()
-	var yjit = step[Vec.y] * math_get_epsilon()
-	var bx0 = floor(rect_x0(rect) + xjit)
-	var by0 = floor(rect_y0(rect) + yjit)
-	var bx1 = floor(rect_x1(rect)+1 - xjit)
-	var by1 = floor(rect_y1(rect)+1 - yjit)
+	var bx0 = floor(rect_x0(rect) + math_get_epsilon())
+	var by0 = floor(rect_y0(rect) + math_get_epsilon())
+	var bx1 = floor(rect_x1(rect)+1-math_get_epsilon())
+	var by1 = floor(rect_y1(rect)+1-math_get_epsilon())
 	begin
-		
+		if trace_draw_debug
+		{
+			draw_set_color(c_purple)
+			draw_set_alpha(0.5)
+			draw_primitive_begin(pr_trianglefan)
+			draw_vertex(bx0, by0)
+			draw_vertex(bx1, by0)
+			draw_vertex(bx1, by1)
+			draw_vertex(bx0, by1)
+			draw_primitive_end()
+		}
 		var xx, yy
 		for (yy = by0; yy < by1; yy++)
 		{
 			for (xx = bx0; xx < bx1; xx++)
 			{
-				draw_set_color(c_purple)
-				draw_set_alpha(0.5)
-				draw_primitive_begin(pr_trianglefan)
-				draw_vertex(xx, yy)
-				draw_vertex(xx+1, yy)
-				draw_vertex(xx+1, yy+1)
-				draw_vertex(xx, yy+1)
-				draw_primitive_end()
 				
 				did |= _get_bloc_callback(xx, yy)
 			}
@@ -554,7 +556,7 @@ function trace_hull (_get_bloc_callback)
 		var rd = ray_direction[i]
 		var dir_positive = rd >= 0
 		step[i] = dir_positive ? +1 : -1
-
+		
 		leading_corner[i]  = dir_positive ? box_max[i] : box_min[i]
 		trailing_corner[i] = dir_positive ? box_min[i] : box_max[i]
 		
@@ -574,7 +576,18 @@ function trace_hull (_get_bloc_callback)
 		
 	}
 	
-	show_debug_message($"{time_next[0]*2}, {time_next[1]*2}")
+	var stepx = step[Vec.x]
+	var stepy = step[Vec.y]
+	
+	var leading_total  = vec_get_temp(
+		stepx > 0 ? bx1 : bx0,
+		stepy > 0 ? by1 : by0
+	)
+	var trailing_total = vec_get_temp(
+		stepx > 0 ? bx0 : bx1,
+		stepy > 0 ? by0 : by1
+	)
+	
 	
 	vec_set_from(leading_start, leading_corner)
 	vec_set_from(trailing_start, trailing_corner)
@@ -586,42 +599,22 @@ function trace_hull (_get_bloc_callback)
 		floor(abs(rect_y1(rect)-rect_y0(rect)))
 	)
 	
-	var maxiter = calc_iter_count(leading_corner, ray_direction) - 1
+	var maxiter = calc_iter_count_sep(
+		leading_corner[0]-math_get_epsilon()*stepx,
+		leading_corner[1]-math_get_epsilon()*stepy,
+		ray_direction[0],
+		ray_direction[1]
+	) - 1
 	var time = 0
 	
 	var xx, yy
 	var ddid = did
 	var RSLATCH = false
-	var stepx = step[Vec.x]
-	var stepy = step[Vec.y]
+
 	var finalize = false
 	var x0, y0, x1, y1
 	while (--maxiter) >= 0
 	{
-		if ddid and not RSLATCH
-		{
-			var mm = max(time_next[Vec.x], time_next[Vec.y]) * time_max
-			var xofs = min(abs(normal[0]) * mm, 1) * stepx
-			var yofs = min(abs(normal[1]) * mm, 1) * stepy
-			//var xofs = leading_corner[0]-leading_start[0] - normal[Vec.x] * mm * time_delta[0]
-			//var yofs = leading_corner[1]-leading_start[1] - normal[Vec.y] * mm * time_delta[1]
-			
-			var xxx = leading_corner[0]
-			var yyy = leading_corner[1]
-			draw_set_color(c_red)
-			draw_set_alpha(1)
-			draw_arrow(
-				xxx-1,
-				yyy-1,
-				leading_start[0]+xofs-1,
-				leading_start[1]+yofs-1,
-				1/16
-			)
-			RSLATCH = true
-			
-		}
-		
-		
 		axis = time_next[Vec.x] < time_next[Vec.y] ? Vec.x : Vec.y
 		
 		begin
@@ -639,123 +632,31 @@ function trace_hull (_get_bloc_callback)
 			}
 		end
 		
-		
-		
-		#region try1
-		//if ddid and false
-		//{
-		//	xx = leading_cel[0] + 0.5
-		//	yy = leading_cel[1] + 0.5
-		//	var xd = normal[0] + math_get_epsilon() * stepx
-		//	var yd = normal[1] + math_get_epsilon() * stepy
-		//	draw_set_color(c_red)
-		//	draw_set_alpha(1)
-			
-		//	//draw_primitive_begin(pr_linestrip)
-		//	//draw_vertex(leading_corner[0], leading_corner[1])
-		//	//draw_vertex(trailing_corner[0], leading_corner[1])
-		//	//draw_vertex(trailing_corner[0], trailing_corner[1])
-		//	//draw_vertex(leading_corner[0], trailing_corner[1])
-		//	//draw_vertex(leading_corner[0], leading_corner[1])
-		//	//draw_primitive_end()
-			
-		//	var mt = min(time_next[0], time_next[1])
-			
-		//	draw_arrow(
-		//		0.5-1,
-		//		0.5-1,
-		//		0.5+normal[0]*time_delta[0]*mt-1,
-		//		0.5+normal[1]*time_delta[1]*mt-1,
-		//		1/16
-		//	)
-			
-		//	var xx0 = trailing_corner[0]+stepx*math_get_epsilon()
-		//	var yy0 = trailing_corner[1]+stepy*math_get_epsilon()
-		//	var xx1 = leading_corner[0]-stepx*math_get_epsilon()+stepx
-		//	var yy1 = leading_corner[1]-stepy*math_get_epsilon()+stepy
-			
-		//	var xs = abs(xx1-xx0)
-		//	var ys = abs(yy1-yy0)
-			
-		//	xx0 = min(xx0, xx1)
-		//	yy0 = min(yy0, yy1)
-		//	xx1 = floor(xx0+xs+1)
-		//	yy1 = floor(yy0+ys+1)
-		//	xx0 = floor(xx0)
-		//	yy0 = floor(yy0)
-			
-		//	draw_set_color(c_yellow)
-		//	draw_set_alpha(0.75)
-		//	draw_primitive_begin(pr_linestrip)
-		//	draw_vertex(xx0, yy0)
-		//	draw_vertex(xx1, yy0)
-		//	draw_vertex(xx1, yy1)
-		//	draw_vertex(xx0, yy1)
-		//	draw_vertex(xx0, yy0)
-		//	draw_primitive_end()
-			
-		//	if stepx < 0
-		//	{
-		//		bx0 = floor(leading_corner[0]-stepx*math_get_epsilon())
-		//	}
-		//	else
-		//	{
-		//		bx1 = floor(leading_corner[0]+1-stepx*math_get_epsilon())
-		//	}
-		//	if stepy < 0
-		//	{
-		//		by0 = floor(leading_corner[1]-stepy*math_get_epsilon())
-		//	}
-		//	else
-		//	{
-		//		by1 = floor(leading_corner[1]+1-stepy*math_get_epsilon())
-		//	}
-			
-		//	draw_set_color(c_fuchsia)
-		//	draw_set_alpha(0.75)
-		//	draw_primitive_begin(pr_linestrip)
-		//	draw_vertex(bx0, by0)
-		//	draw_vertex(bx1, by0)
-		//	draw_vertex(bx1, by1)
-		//	draw_vertex(bx0, by1)
-		//	draw_vertex(bx0, by0)
-		//	draw_primitive_end()
-			
-		//	for (xx = xx0; xx < xx1; xx++)
-		//	{
-		//		var xxin = bx0 <= xx and xx < bx1
-		//		for (yy = yy0; yy < yy1; yy++)
-		//		{
-		//			if xxin and (by0 <= yy and yy < by1)
-		//			{
-		//				continue
-		//			}
-		//			ddid |= _get_bloc_callback(xx, yy)
-		//		}
-		//	}
-		//	return ddid
-		//}
-		#endregion
-
+		if ddid
+		{
+			break
+		}
 		
 		if axis == Vec.x
 		{
 			x0 = leading_cel[Vec.x]
 			y0 = trailing_cel[Vec.y]
+			leading_total[Vec.x] += stepx
 		}
 		else if axis == Vec.y
 		{
 			x0 = trailing_cel[Vec.x]
 			y0 = leading_cel[Vec.y]
+			leading_total[Vec.y] += stepy
 		}
 
-		var x1 = leading_cel[Vec.x] + step[Vec.x]
-		var y1 = leading_cel[Vec.y] + step[Vec.y]
+		var x1 = leading_cel[Vec.x] + stepx
+		var y1 = leading_cel[Vec.y] + stepy
 		
 		var xcount = abs(x1-x0)
 		var ycount = abs(y1-y0)
 			
-		begin
+		if trace_draw_debug begin
 			var m0 = 1/16
 			var m1 = 1-m0
 			var xj = 1-(stepx*0.5+0.5)
@@ -764,7 +665,7 @@ function trace_hull (_get_bloc_callback)
 			var yy0 = min(y0, y1)+m0+yj
 			var xx1 = max(x0, x1)-m0+xj
 			var yy1 = max(y0, y1)-m0+yj
-				
+			
 			draw_set_color(c_orange)
 			draw_set_alpha(0.5)
 			draw_primitive_begin(pr_trianglefan)
@@ -786,8 +687,131 @@ function trace_hull (_get_bloc_callback)
 		}
 		
 		did |= ddid
+		if ddid then break
 	}
-
+	
+	if did
+	{
+		var nearest = trace_nearest
+		var tmp
+		
+		var cur_lx0 = trailing_corner[0]
+		var cur_ly0 = trailing_corner[1]
+		var cur_lx1 = leading_corner[0]
+		var cur_ly1 = leading_corner[1]
+		
+		tmp = cur_lx0
+		cur_lx0 = min(tmp, cur_lx1)
+		cur_lx1 = max(tmp, cur_lx1)
+		tmp = cur_ly0
+		cur_ly0 = min(tmp, cur_ly1)
+		cur_ly1 = max(tmp, cur_ly1)
+		
+		
+		while (--maxiter) >= 0
+		{
+			var land_x = ray_direction[0] * nearest
+			var land_y = ray_direction[1] * nearest
+		
+			var lsx0 = trailing_start[0] + land_x
+			var lsy0 = trailing_start[1] + land_y
+			var lsx1 = leading_start[0] + land_x
+			var lsy1 = leading_start[1] + land_y
+		
+			tmp = lsx0
+			lsx0 = min(tmp, lsx1)
+			lsx1 = max(tmp, lsx1)
+			tmp = lsy0
+			lsy0 = min(tmp, lsy1)
+			lsy1 = max(tmp, lsy1)
+			
+			lsx0 = min(lsx0, cur_lx0)
+			lsy0 = min(lsy0, cur_ly0)
+			lsx1 = max(lsx1, cur_lx1)
+			lsy1 = max(lsy1, cur_ly1)
+			
+			if trace_draw_debug
+			{
+				draw_primitive_begin(pr_linestrip)
+				draw_set_color(c_aqua)
+				draw_set_alpha(175)
+				draw_vertex(lsx0, lsy0)
+				draw_vertex(lsx1, lsy0)
+				draw_vertex(lsx1, lsy1)
+				draw_vertex(lsx0, lsy1)
+				draw_vertex(lsx0, lsy0)
+				draw_primitive_end()
+				
+				draw_primitive_begin(pr_linestrip)
+				draw_set_color(c_fuchsia)
+				draw_set_alpha(175)
+				draw_vertex(cur_lx0, cur_ly0)
+				draw_vertex(cur_lx1, cur_ly0)
+				draw_vertex(cur_lx1, cur_ly1)
+				draw_vertex(cur_lx0, cur_ly1)
+				draw_vertex(cur_lx0, cur_ly0)
+				draw_primitive_end()
+			}
+			
+			lsx0 = floor(lsx0+math_get_epsilon())
+			lsy0 = floor(lsy0+math_get_epsilon())
+			lsx1 = floor(lsx1+1-math_get_epsilon())
+			lsy1 = floor(lsy1+1-math_get_epsilon())
+		
+			var ignore_x0 = min(trailing_total[0], leading_total[0])
+			var ignore_y0 = min(trailing_total[1], leading_total[1])
+			var ignore_x1 = max(leading_total[0], trailing_total[0])
+			var ignore_y1 = max(leading_total[1], trailing_total[1])
+			
+			if trace_draw_debug
+			{
+				draw_primitive_begin(pr_linestrip)
+				draw_set_color(c_aqua)
+				draw_set_alpha(0.9)
+				draw_vertex(lsx0, lsy0)
+				draw_vertex(lsx1, lsy0)
+				draw_vertex(lsx1, lsy1)
+				draw_vertex(lsx0, lsy1)
+				draw_vertex(lsx0, lsy0)
+				draw_primitive_end()
+			}
+			
+			var xcount = abs(lsx1-lsx0)
+			var ycount = abs(lsy1-lsy0)
+			
+			for (xx = lsx0; --xcount >= 0; xx++)
+			{
+				var ignx = ignore_x0 <= xx and xx < ignore_x1
+				yc = ycount
+				for (yy = lsy0; --yc >= 0; yy++)
+				{
+					if ignx and ignore_y0 <= yy and yy < ignore_y1
+					{
+						continue
+					}
+					ddid |= _get_bloc_callback(xx, yy)
+				}
+			}
+			if trace_nearest >= nearest
+			{
+				break
+			}
+			nearest = trace_nearest
+		}
+	}
+	
+	if trace_draw_debug
+	{
+		draw_set_color(c_red)
+		draw_set_alpha(175)
+		draw_primitive_begin(pr_linestrip)
+		draw_vertex(leading_total[0], leading_total[1])
+		draw_vertex(trailing_total[0], leading_total[1])
+		draw_vertex(trailing_total[0], trailing_total[1])
+		draw_vertex(leading_total[0], trailing_total[1])
+		draw_vertex(leading_total[0], leading_total[1])
+		draw_primitive_end()
+	}
 	return did
 }
 
@@ -925,6 +949,7 @@ trace_nearest = infinity
 trace_nearest_box = rect_create()
 trace_nearest_normal = vec_create()
 trace_continue_count = -1
+trace_draw_debug = false
 
 trace_predicate = function (_x, _y) {
 	static COLLIDERS = ds_list_create()
@@ -1019,13 +1044,14 @@ trace_predicate2 = function (_x, _y) {
 			if tt < trace_nearest
 			{
 				any = true
+				trace_any = true
 				trace_nearest = tt
 				rect_set_from(trace_nearest_box, collider)
 				vec_set_xy(trace_nearest_normal, boxcast_context.normal_x, boxcast_context.normal_y)
 			}
 		}
 	}
-	trace_any |= any
+
 	return any
 }
 
@@ -1034,8 +1060,8 @@ trace_predicate2 = function (_x, _y) {
 var bbw = (0.6) * 0.5
 var bbh = 1.8
 
-//var bbw = (3.6) * 0.5
-//var bbh = 4.8
+//var bbw = (4.) * 0.5
+//var bbh = .1
 rect_set_corners(
 	ray.src_box,
 	-bbw,
@@ -1061,7 +1087,6 @@ create_map(
 	"#    S         #",
 	"################",
 )
-
 cam.x = map.wide / 2
 cam.y = map.tall / 2
 

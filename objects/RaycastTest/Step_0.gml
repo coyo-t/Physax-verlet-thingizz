@@ -1,5 +1,7 @@
 var mdelta = mouse_wheel_down() - mouse_wheel_up()
 
+trace_draw_debug ^= keyboard_check_pressed(vk_f3)
+
 if mdelta <> 0
 {
 	cam.set_zoom(cam.zoom * exp(mdelta * (1/16)))	

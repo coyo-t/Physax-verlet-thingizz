@@ -106,34 +106,82 @@ ray.draw_box()
 
 begin
 	//draw_set_alpha(0.5)
-	draw_set_color(trace_any ? c_green : c_red)
-	draw_primitive_begin(pr_linelist)
 	
 	var nt = trace_any ? trace_nearest : 1.0
 	
+	var raydirx = ray.get_dir_x()
+	var raydiry = ray.get_dir_y()
+	
 	var rx0 = ray.x0()
 	var ry0 = ray.y0()
-	var rx1 = (ray.get_dir_x()*nt) + rx0
-	var ry1 = (ray.get_dir_y()*nt) + ry0
-	draw_vertex(rx0, ry0)
-	draw_vertex(rx1, ry1)
+	
+	var rhitx = raydirx*nt
+	var rhity = raydiry*nt
+	
+	var rx1 = rhitx + rx0
+	var ry1 = rhity + ry0
+	
+	var rxp = raydirx >= 0
+	var ryp = raydiry >= 0
+	var rb = ray.box
+	
+	var trailingx = rxp ? rect_x0(rb) : rect_x1(rb)
+	var trailingy = ryp ? rect_y0(rb) : rect_y1(rb)
+	var leadingx = rxp ? rect_x1(rb) : rect_x0(rb)
+	var leadingy = ryp ? rect_y1(rb) : rect_y0(rb)
+	
+	draw_set_alpha(0.5)
+	draw_set_color(c_grey)
+	
+	draw_primitive_begin(pr_trianglestrip)
+	draw_vertex(leadingx, trailingy)
+	draw_vertex(leadingx+rhitx, trailingy+rhity)
+	draw_vertex(leadingx, leadingy)
+	draw_vertex(leadingx+rhitx, leadingy+rhity)
+	draw_vertex(trailingx, leadingy)
+	draw_vertex(trailingx+rhitx, leadingy+rhity)
+
+	
+	draw_primitive_end()
+	
+	draw_primitive_begin(pr_linelist)
+	draw_set_alpha(0.5)
+
+	draw_set_color(c_ltgrey)
+	draw_vertex(trailingx, leadingy)
+	draw_vertex(trailingx+raydirx, leadingy+raydiry)
+	draw_vertex(leadingx, trailingy)
+	draw_vertex(leadingx+raydirx, trailingy+raydiry)
+	
+	draw_set_color(trace_any ? c_green : c_red)
+	//draw_vertex(rx0, ry0)
+	//draw_vertex(rx1, ry1)
 	
 	if trace_any
 	{
 		draw_vertex(rx1, ry1)
 		draw_vertex(rx1+trace_nearest_normal[Vec.x], ry1+trace_nearest_normal[Vec.y])
 	}
-
+	
 	draw_set_alpha(1)
 	draw_primitive_end()
 	
+	
+	draw_set_color(trace_any ? c_lime : c_grey)
+	
 	if trace_any
 	{
-		draw_set_alpha(0.5)
 	}
+	draw_set_alpha(0.5)
 	ray.draw_box(
 		rx1-rx0,
-		ry1-ry0
+		ry1-ry0,
+		true
+	)
+	draw_set_color(c_white)
+	ray.draw_box(
+		raydirx,
+		raydiry
 	)
 end
 
