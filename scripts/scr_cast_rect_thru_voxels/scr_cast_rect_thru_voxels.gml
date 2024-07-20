@@ -53,6 +53,8 @@ constructor begin
 	hard_time_limit/*Value*/ = infinity
 	hard_time_limit_s/*Value*/ = infinity
 	
+	adds_steps/*Int*/ = 2
+	
 	static set_hard_time_limit = function (_v/*Value*/)
 	{
 		set_hard_time_limit_sqr(_v*_v)
@@ -76,6 +78,7 @@ constructor begin
 		time = 0.0
 		time_max = 0.0
 		time_accumulator = 0.0
+		var extra_steps = adds_steps
 		vec_set_xy(time_delta, 0,0)
 		vec_set_xy(time_next, 0,0)
 		
@@ -98,7 +101,11 @@ constructor begin
 				var done = on_collide()
 				if done
 				{
-					return time_accumulator
+					//--extra_steps
+					//if extra_steps < 0
+					{
+						return time_accumulator
+					}
 				}
 			}
 			axis = advance_step()

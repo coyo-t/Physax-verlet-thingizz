@@ -113,7 +113,7 @@ var vc_onc = method(self, function (dist, axis, dir, remain)
 	//remain[axis] = 0
 	//remain[0] = sign(remain[0])
 	//remain[1] = sign(remain[1])
-	return false
+	return true
 	
 	//return true//remain[0] == 0 and remain[1] == 0
 })
