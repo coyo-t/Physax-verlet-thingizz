@@ -74,7 +74,7 @@ begin
 
 end
 
-hit.did = trace(trace_predicate)
+trace(trace_predicate)
 
 draw_set_color(c_yellow)
 draw_primitive_begin(pr_linelist)
@@ -85,7 +85,7 @@ draw_vertex(ray.x0()+rr, ray.y0()-rr)
 draw_vertex(ray.x0()-rr, ray.y0()+rr)
 draw_primitive_end()
 
-if hit.did
+if trace_any
 {
 	draw_set_color(c_green)
 	draw_set_alpha(0.5)
@@ -102,10 +102,10 @@ if hit.did
 
 begin
 	//draw_set_alpha(0.5)
-	draw_set_color(hit.did ? c_green : c_red)
+	draw_set_color(trace_any ? c_green : c_red)
 	draw_primitive_begin(pr_linelist)
 	
-	var nt = hit.did ? trace_nearest : 1.0
+	var nt = trace_any ? trace_nearest : 1.0
 	
 	var rx0 = ray.x0()
 	var ry0 = ray.y0()
@@ -114,7 +114,7 @@ begin
 	draw_vertex(rx0, ry0)
 	draw_vertex(rx1, ry1)
 	
-	if hit.did
+	if trace_any
 	{
 		draw_vertex(rx1, ry1)
 		draw_vertex(rx1+trace_nearest_normal[Vec.x], ry1+trace_nearest_normal[Vec.y])
@@ -123,7 +123,7 @@ begin
 	draw_set_alpha(1)
 	draw_primitive_end()
 	
-	if hit.did
+	if trace_any
 	{
 		draw_set_alpha(0.5)
 	}

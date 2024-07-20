@@ -44,7 +44,7 @@ begin // blocs
 		colour = c_black
 		render_shapes = [rect_create(0, 0, 1, 1)]
 		collision_shapes = [rect_create(0, 0, 1, 1)]
-	
+		
 		static collider_count = function ()
 		{
 			return array_length(collision_shapes)
@@ -59,36 +59,79 @@ begin // blocs
 		{
 			return numeric == _other.numeric
 		}
+		
+		static get_colliders = function (_map/*Map*/, _x/*Int*/, _y/*Int*/, _outs/*DsList*/)/*Int*/
+		{
+			static FUCK = {OUTS:-1}
+			static AAAA = method(FUCK, function (_collider) {
+				ds_list_add(OUTS, _collider)
+			})
+			var cc = collider_count()
+			if cc <> 0
+			{
+				FUCK.OUTS = _outs
+				array_foreach(collision_shapes, AAAA)
+			}
+			return cc
+		}
 	end
-	
+
 	var register = method(self, function (thing)
 	{
+		thing ??= {}
+		static handle_rect_array = function (_a)
+		{
+			if not is_array(_a) or array_length(_a) == 0
+			{
+				return []
+			}
+			if is_array(_a[0])
+			{
+				return _a
+			}
+			return [_a]
+		}
+		
 		// this is silly
-		static FUCK = static_get(new __BLOC())
-		static_set(thing, FUCK)
-		thing.numeric = array_length(IDS)
-		array_push(IDS, thing)
-		return thing
+		var outs = new __BLOC()
+		outs.numeric = array_length(IDS)
+		
+		outs.colour = thing[$ "colour"] ?? c_black
+		
+		outs.render_shapes = handle_rect_array(thing[$ "render_shapes"])
+		outs.collision_shapes = handle_rect_array(thing[$ "collision_shapes"])
+		
+		// copy methods if given
+		var names = struct_get_names(thing)
+		for (var i = array_length(names); --i >= 0;)
+		{
+			var name = names[i]
+			var cb = thing[$ names[i]]
+			if is_callable(cb) and struct_exists(outs, name)
+			{
+				outs[$ name] = method(outs, cb)
+			}
+		}
+		
+		array_push(IDS, outs)
+		return outs
 	})
-	var full_bloc = rect_create(0, 0, 1, 1)
 	
-	ID_NON = register({
-		colour: c_black,
-		render_shapes: [],
-		collision_shapes: [],
-	})
+	var full_bloc = [rect_create(0, 0, 1, 1)]
+	
+	ID_NON = register()
 
 	ID_BLOC = register({
 		colour: c_grey,
-		render_shapes: [full_bloc],
-		collision_shapes: [full_bloc],
+		render_shapes: full_bloc,
+		collision_shapes: full_bloc,
 	})
 	
 	var pole_bloc = rect_create(0.25, 0.25, 0.75, 0.75)
 	ID_POLE = register({
 		colour: c_orange,
-		render_shapes: [pole_bloc],
-		collision_shapes: [pole_bloc],
+		render_shapes: pole_bloc,
+		collision_shapes: pole_bloc,
 	})
 	
 	var checkers_bloc = [
@@ -99,7 +142,6 @@ begin // blocs
 		colour: c_orange,
 		render_shapes: checkers_bloc,
 		collision_shapes: checkers_bloc,
-		
 	})
 	
 	var stairs_bloc = get_shapes_from_room_instances(room_shape_superstairs)
@@ -116,11 +158,11 @@ begin // blocs
 	var prec_collide = rect_create(prec_x0, 0, prec_x1, 1.5)
 	ID_PRECARIOUS = register({
 		colour: merge_color(c_orange, c_maroon, 0.5),
-		render_shapes: [prec_render],
-		collision_shapes: [prec_collide],
+		render_shapes: prec_render,
+		collision_shapes: prec_collide,
 	})
 	
-	var cr_shape = [rect_create(0, 0, 1, 1/16)]
+	var cr_shape = rect_create(0, 0, 1, 1/16)
 	ID_CARPET = register({
 		colour: c_white,
 		render_shapes: cr_shape,
@@ -131,7 +173,6 @@ begin // blocs
 	ID_SAPLING = register({
 		colour: c_lime,
 		render_shapes: lv_shape,
-		collision_shapes: [],
 	})
 end
 
@@ -400,7 +441,9 @@ end
 
 boxcast_context = new RayRectContext2()
 
-
+#macro TRACE_FALSE (0)
+#macro TRACE_CEL_CONTAINED_COLLIDERS (0b0000_0001)
+#macro TRACE_COLLIDED (0b0000_0010)
 
 function trace (_get_bloc_callback)
 {
@@ -504,17 +547,20 @@ function trace (_get_bloc_callback)
 		
 		draw_primitive_begin(pr_trianglefan)
 		draw_set_color(c_orange)
-		draw_set_alpha(0.5)
+		draw_set_alpha(0.25)
 		draw_vertex(cel_x, cel_y)
 		draw_vertex(cel_x+1, cel_y)
 		draw_vertex(cel_x+1, cel_y+1)
 		draw_vertex(cel_x, cel_y+1)
 		draw_primitive_end()
 		
-		var did = (
-			_get_bloc_callback(cel_x, cel_y) or
-			(down_search and _get_bloc_callback(cel_x, cel_y - 1))
-		)
+		var did = _get_bloc_callback(cel_x, cel_y)
+		
+		var did_down = TRACE_FALSE
+		if down_search and (did & TRACE_CEL_CONTAINED_COLLIDERS) == 0
+		{
+			did_down = _get_bloc_callback(cel_x, cel_y - 1)
+		}
 		
 		if down_search
 		{
@@ -530,7 +576,7 @@ function trace (_get_bloc_callback)
 			var x1 = dsx+m1
 			var y1 = dsy+m1
 			
-			draw_set_alpha(0.5)
+			draw_set_alpha(0.25)
 			draw_vertex(x0, y0)
 			draw_vertex(x1, y0)
 			draw_vertex(x1, y1)
@@ -551,7 +597,7 @@ function trace (_get_bloc_callback)
 		pev_x = cel_x
 		pev_y = cel_y
 		
-		if did
+		if ((did | did_down) & TRACE_COLLIDED) <> 0
 		{
 			return true
 		}
@@ -574,27 +620,40 @@ m_proj = matrix_build_identity()
 function trace_reset ()
 {
 	trace_nearest = infinity
+	trace_any = false
+	trace_continue_count = -1
 }
+trace_any = false
 trace_nearest = infinity
 trace_nearest_box = rect_create()
 trace_nearest_normal = vec_create()
+trace_continue_count = -1
 
 trace_predicate = function (_x, _y) {
+	static COLLIDERS = ds_list_create()
+	ds_list_clear(COLLIDERS)
+	
 	var type = map.get(_x, _y)
-	var cc = type.collider_count()
+	var cc = type.get_colliders(map, _x, _y, COLLIDERS)
 	if cc <= 0
 	{
-		return false
+		if trace_continue_count > -1
+		{
+			--trace_continue_count
+			if trace_continue_count == -1
+			{
+				return TRACE_COLLIDED
+			}
+		}
+		
+		return TRACE_FALSE
 	}
-	
 	var any = false
-	var colliders = type.collision_shapes
-	
 	var temp_rect = rect_get_temp()
-	
 	for (var i = cc; --i >= 0;)
 	{
-		var collider = rect_set_from(temp_rect, colliders[i])
+		var collider = rect_set_from(temp_rect, COLLIDERS[| i])
+		var taller = rect_y1(collider) > 1
 		rect_move(collider, _x, _y)
 		var test = boxcast_context.test(
 			rect_x0(collider),
@@ -607,6 +666,10 @@ trace_predicate = function (_x, _y) {
 			var tt = boxcast_context.near_time
 			if tt < trace_nearest
 			{
+				if taller and trace_continue_count == -1
+				{
+					trace_continue_count = 1
+				}
 				any = true
 				trace_nearest = tt
 				rect_set_from(trace_nearest_box, collider)
@@ -614,8 +677,20 @@ trace_predicate = function (_x, _y) {
 			}
 		}
 	}
+	trace_any |= any
 	
-	return any
+	if any and trace_continue_count > 0
+	{
+		trace_continue_count -= 1
+		return TRACE_CEL_CONTAINED_COLLIDERS
+	}
+	
+	if trace_continue_count == 0
+	{
+		return TRACE_CEL_CONTAINED_COLLIDERS | TRACE_COLLIDED
+	}
+	
+	return TRACE_CEL_CONTAINED_COLLIDERS | (TRACE_COLLIDED * any)
 }
 
 
@@ -638,8 +713,8 @@ create_map(
 	"#              #",
 	"#              #",
 	"#      P       #",
-	"# _         |  #",
-	"# |       | |  #",
+	"  _         |  #",
+	"| |       | |  #",
 	"###     #####  #",
 	"#              #",
 	"#              #",
