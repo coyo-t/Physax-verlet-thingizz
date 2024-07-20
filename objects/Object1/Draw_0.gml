@@ -121,6 +121,37 @@ begin
 			
 		end
 		
+		begin
+			draw_set_color(c_fuchsia)
+			draw_set_alpha(0.5)
+			draw_primitive_begin(pr_trianglelist)
+			for (var i = array_length(temp_adj_colliders); i > 0;)
+			{
+				var collider = temp_adj_colliders[--i]
+				if i <= 1
+				{
+					break
+					draw_set_color(c_orange)
+					draw_set_alpha(0.1)
+				}
+				var x0 = rect_get_x0(collider)
+				var y0 = rect_get_y0(collider)
+				var x1 = rect_get_x1(collider)
+				var y1 = rect_get_y1(collider)
+				
+				
+				draw_vertex(x0, y0)
+				draw_vertex(x1, y0)
+				draw_vertex(x0, y1)
+				draw_vertex(x1, y0)
+				draw_vertex(x0, y1)
+				draw_vertex(x1, y1)
+				
+			}
+			draw_primitive_end()
+			draw_set_alpha(1.0)
+		end
+		
 		matrix_set(matrix_world, matrix_build(
 			xx-plrx0,
 			yy-plry0,
@@ -136,6 +167,7 @@ begin
 		draw_vertex(plrx0, plry1)
 		draw_vertex(plrx0, plry0)
 		draw_primitive_end()
+
 		xx = lerp(player_xprevious, player_x, tfac)
 		yy = lerp(player_yprevious, player_y, tfac)
 
@@ -149,12 +181,34 @@ begin
 		
 		matrix_set(matrix_world, matrix_stack_top())
 		matrix_stack_clear()
-		draw_primitive_begin(pr_linestrip)
 		draw_set_color(c_white)
+		
 		var abx0 = rect_get_x0(player_box_absolute)
 		var aby0 = rect_get_y0(player_box_absolute)
 		var abx1 = rect_get_x1(player_box_absolute)
 		var aby1 = rect_get_y1(player_box_absolute)
+		
+		begin
+			var spr = spr_jig
+			var sw = sprite_get_width(spr)
+			var sh = sprite_get_height(spr)
+			var ds = (plry1-plry0)/sh
+			var ratio = sw/sh
+			draw_sprite_ext(
+				spr,
+				-1,
+				(abx0+abx1)*0.5,
+				aby0,
+				ratio*ds*(PLAYER_RADIUS/.6),
+				-ds,
+				0,
+				c_white,
+				1
+			)
+			
+		end
+		
+		draw_primitive_begin(pr_linestrip)
 		draw_vertex(abx0, aby0)
 		draw_vertex(abx1, aby0)
 		draw_vertex(abx1, aby1)

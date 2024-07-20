@@ -9,6 +9,7 @@ __DEBUG_STRING = ""
 
 
 step_sounds_generic = get_sound_set("pl_step_generic") ///@is{array<sound>}
+audio_set_master_gain(0, 0.5)
 
 tick = method(self, function() /*=>*/ {
 	player_xprevious = player_x
@@ -70,7 +71,7 @@ var vc_getb = method(self, function (_x, _y) {
 var vc_onc = method(self, function (dist, axis, dir, remain)
 {
 	//show_debug_message($"dist: {dist}\naxis: {axis}\ndirection: {dir}\nremaining: {remain}")
-	draw_rectangle_size(__hit_x, __hit_y, 1, 1, true)
+	//draw_rectangle_size(__hit_x, __hit_y, 1, 1, true)
 	//draw_arrow(
 	//	viewcast_x-1,
 	//	viewcast_y-1,
@@ -141,14 +142,15 @@ end
 #macro PLAYER_EYELINE_OFFSET (0.2)
 #macro PLAYER_HEIGHT_STANDING (1.8)
 #macro PLAYER_HEIGHT_SNEAKING (1.5-math_get_epsilon())
+#macro PLAYER_RADIUS (0.6)
 
-player_x/*:Number*/ = 0
-player_y/*:Number*/ = 0
+player_x/*:Number*/ = 0.0
+player_y/*:Number*/ = 0.0
 
-player_xprevious/*:Number*/ = 0
-player_yprevious/*:Number*/ = 0
+player_xprevious/*:Number*/ = 0.0
+player_yprevious/*:Number*/ = 0.0
 
-player_wide/*:Number*/ = 0.6
+player_wide/*:Number*/ = PLAYER_RADIUS
 player_tall/*:Number*/ = PLAYER_HEIGHT_STANDING
 
 player_box = rect_create(0,0,0,0) ///@is{Rect}
@@ -279,9 +281,14 @@ function player_inside_climbable ()
 	return map.get_block(xx, yy).is_climbable()
 }
 
+temp_adj_colliders = []
+temp_adj_check = rect_create(0,0,0,0)
 ///@self
 function move (xDirection/*:number*/, yDirection/*:number*/)
 {
+	static ORIGINAL_BOX = rect_create(0,0,0,0)
+	temp_adj_colliders = []
+	
 	y_slide_offset *= 0.4
 	var x_begin = player_x
 		
@@ -293,6 +300,7 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 	//	yDirection = beginYD = modv.y;
 	//}
 	
+	rect_set_from(ORIGINAL_BOX, player_box)
 	rect_set_from(tempHitbox, player_box)
 	var broadPhase/*:Array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection));
 	var br_length = array_length(broadPhase)
@@ -453,8 +461,31 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 			//onWhat.onSteppedOn(level, new BlockCo(bx, by, bz));
 		}
 	}
+	
+	var xsign = sign(beginXD)
+	var ysign = sign(beginYD)
+	
+	var closure = {
+		occupy: rect_create(
+			floor(rect_get_x0(player_box)),
+			floor(rect_get_y0(player_box)),
+			floor(rect_get_x1(player_box)+1),
+			floor(rect_get_y1(player_box)+1)
+		),
+		pb: player_box,
+	}
+	var check = rect_expand(player_box, xsign, ysign)
+	temp_adj_colliders = map.get_colliders(
+		check,
+		method(closure, function (_bloc, _shape, _x, _y) {
+			var p = pb
+			var standing = rect_get_y1(_shape) == rect_get_y0(p)
+			return standing and (
+				rect_get_x0(_shape) < rect_get_x1(p) and rect_get_x1(_shape) > rect_get_x0(p)
+			)
+	}))
+	array_insert(temp_adj_colliders, 0, check, closure.occupy)
 }
-
 
 ///@self
 function tick_player ()
@@ -519,7 +550,17 @@ function tick_player ()
 		}
 	}
 	
-	var ss = wish_xdirection * (on_ground ? 0.1 : 0.02)
+	var basis = .91
+	if on_ground
+	{
+		var bx = floor(player_x)
+		var by = floor(player_y - 1)
+		var onWhat = map.get_block(bx, by)
+		basis *= onWhat.ground_slipperiness
+	}
+	
+	basis = power(0.6 * 0.91, 3) / power(basis, 3)
+	var ss = wish_xdirection * (on_ground ? 0.1 * basis: 0.02)
 	if abs(ss) >= 0.01
 	{
 		speed_x += ss
@@ -531,6 +572,16 @@ function tick_player ()
 	{
 		fall_distance = 0
 		speed_y = max(speed_y, -0.15)
+	}
+	
+	
+	var ground_frict = 0.91
+	if on_ground
+	{
+		var bx = floor(player_x)
+		var by = floor(player_y - 1)
+		var onWhat = map.get_block(bx, by)
+		ground_frict *= onWhat.ground_slipperiness
 	}
 	
 	move(speed_x, speed_y)
@@ -549,17 +600,13 @@ function tick_player ()
 		}
 	}
 	
-	speed_x *= 0.91
-	speed_y *= 0.98
-	
 	if not screw_gravity
 	{
 		speed_y -= 0.08
 	}
-	if on_ground
-	{
-		speed_x *= 0.6
-	}
+	
+	speed_x *= ground_frict//0.91
+	speed_y *= 0.98
 	
 	var hmoment = min(speed_x, 0.1)
 	var fallangle = 0

@@ -4,13 +4,16 @@ vertex_format_add_position_3d()
 vertex_format_add_color()
 global.__CHUNK_VERTEX_FORMAT = vertex_format_end() ///@is{vertex_format}
 
-function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
+/*typealias BlockAreaPredicate = (_block:Block, _shape:Rect, _x:Int, _y:Int) -> Boolean*/
 
-	wide = _wide; ///@is{int}
-	tall = _tall; ///@is{int}
-	blocks = ds_grid_create(_wide, _tall); /// @is {ds_grid<int>}
-	dirty = true; ///@is{bool}
-	vb = vertex_create_buffer(); ///@is{vertex_buffer}
+function Map (_wide/*:Int*/, _tall/*:Int*/) constructor begin
+
+	wide/*:Int*/ = _wide;
+	tall/*:Int*/ = _tall;
+	blocks/*:Grid<Int>*/ = ds_grid_create(_wide, _tall);
+	dirty = true;
+	vb/*:VertexBuffer*/ = vertex_create_buffer(); ///@is{vertex_buffer}
+	__temp_colliders/*:Array<Rect>*/ = []
 	
 	static fill_region = function (_x0/*:Int*/, _y0/*:Int*/, _x1/*:Int*/, _y1/*:Int*/, _type/*:Block*/)
 	{
@@ -115,9 +118,12 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		vertex_submit(vb, pr_trianglelist, -1)
 	}
 	
-	static get_colliders = function (box/*:Rect*/) /*-> Array<Rect>*/
+	static get_colliders = function (box/*:Rect*/, predicate=undefined) /*-> Array<Rect>*/
 	{
 		static TEMP = rect_create(0,0,0,0)
+		static DEFAULT_PREDICATE = function () { return true }
+		
+		predicate ??= DEFAULT_PREDICATE
 		
 		var x0 = floor(rect_get_x0(box)+EPS)
 		var x1 = floor(rect_get_x1(box)+1+EPS)
@@ -140,7 +146,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 				for (var bb = array_length(shapes); bb > 0;)
 				{
 					var shape = shapes[--bb]
-					if rect_overlapping(shape, box)
+					if rect_overlapping(shape, box) and predicate(bloc, shape, xx, yy)
 					{
 						array_push(outs, shape)
 					}

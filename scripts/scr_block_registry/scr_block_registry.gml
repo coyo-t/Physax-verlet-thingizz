@@ -6,17 +6,11 @@ global.block_soundtypes = {
 	grate: new BlockSoundType(, 0.5, "pl_step_grate"),
 }
 
-global.blocks_all = [] ///@is {array<Block>}
-global.blocks_nametable = {}
+global.blocks_all/*:Array<Block>*/ = []
+global.blocks_nametable/*:Map<Str, Block>*/ = {}
 
-//!#mfunc block_by_id {"args":["__id__"],"order":[0]}
-#macro block_by_id_mf0  (global.blocks_all[(
-#macro block_by_id_mf1 )])
-//!#mfunc block_by_name {"args":["__name__"],"order":[0]}
-#macro block_by_name_mf0  (global.blocks_nametable[$ (
-#macro block_by_name_mf1 )])
-
-function blocks_register (_name/*:string*/, _block/*:Block*/) /*-> Block*/
+/*generic(T=Block)*/
+function blocks_register (_name/*:Str*/, _block/*:T*/)/*->T*/
 {
 	_block.runtime_id = array_length(global.blocks_all)
 	array_push(global.blocks_all, _block)
@@ -31,28 +25,28 @@ function blocks_get_by_id (_id)
 	return global.blocks_all[_id]
 }
 
-global.air = blocks_register("air", new AirBlock()) ///@is {AirBlock}
+global.air = blocks_register("air", new AirBlock())
 
-global.out_of_bounds = blocks_register("out_of_bounds", new OutOfBoundsBlock()) ///@is {OutOfBoundsBlock}
+global.out_of_bounds = blocks_register("out_of_bounds", new OutOfBoundsBlock())
 
-global.stone = blocks_register("stone", new Block()) ///@is {Block}
+global.stone = blocks_register("stone", new Block())
 with global.stone
 {
 	colour = c_grey
 	sound_type = global.block_soundtypes.tile
 }
 
-global.dirt = blocks_register("dirt", new Block()) ///@is {Block}
+global.dirt = blocks_register("dirt", new Block())
 with global.dirt
 {
 	colour = c_orange
 	sound_type = global.block_soundtypes.dirt
 }
 
-global.slab = blocks_register("slab", new SlabBlock()) ///@is {SlabBlock}
+global.slab = blocks_register("slab", new SlabBlock())
 global.slab.colour = c_grey
 
-global.quarter_slab = blocks_register("slab", new SlabBlock(0.25)) ///@is {SlabBlock}
+global.quarter_slab = blocks_register("slab", new SlabBlock(0.25))
 global.quarter_slab.colour = c_grey
 
 global.upper_slab = blocks_register("upper_slab", new SlabBlock(1, 0.5))
@@ -88,7 +82,24 @@ global.right_ladder = blocks_register("right_ladder", new LadderBlock("right"))
 global.right_ladder.colour = c_orange
 
 
+global.lego_studs = blocks_register("lego_studs", new ColliderCollectionBlock())
+with global.lego_studs
+{
+	colour = c_lime
+	
+	__add_colliders(
+		rect_create(2/16, 0, 4/16, 1/16),
+		rect_create((16-4)/16, 0, (16-2)/16, 1/16)
+	)
+	
+}
 
+global.ice = blocks_register("ice", new IceBlock())
+with global.ice
+{
+	colour = #7bc6fc
+	sound_type = global.block_soundtypes.tile
+}
 
 
 

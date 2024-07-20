@@ -13,6 +13,8 @@ function Block () constructor {
 	
 	sound_type/*:BlockSoundType*/ = global.block_soundtypes.none
 	
+	ground_slipperiness/*:Number*/ = 0.6
+	
 	static drawable = function () /*-> bool*/
 	{
 		return true
@@ -42,10 +44,17 @@ function Block () constructor {
 	{
 		return false
 	}
+	
+	static __set_friction = function (_value/*:Number*/)
+	{
+		ground_slipperiness = 1 - _value
+	}
 }
 
 ///@hint AirBlock extends Block
 function AirBlock () : Block() constructor begin
+	
+	ground_slipperiness = 0.6//*0.91
 	
 	static drawable = function () /*-> bool*/
 	{
@@ -156,3 +165,48 @@ function LadderBlock (_side) : Block() constructor begin
 		return true
 	}
 end
+
+function ColliderCollectionBlock () : Block() constructor begin
+	shapes = []
+	
+	static __add_colliders = function (/*...:Rect*/)
+	{
+		for (var i = argument_count; (--i) >= 0;)
+		{
+			array_push(shapes, argument[i])
+		}
+	}
+	
+	
+	static get_render_shapes = function () /*-> array<Rect>*/
+	{
+		var sz = array_length(shapes)
+		var outs = array_create(sz)
+		
+		for (var i = sz; (--i) >= 0;)
+		{
+			outs[i] = rect_copy(shapes[i])
+		}
+		return outs
+	}
+	
+	static get_colliders = function (_xofs, _yofs)
+	{
+		var sz = array_length(shapes)
+		var outs = array_create(sz)
+		
+		for (var i = sz; (--i) >= 0;)
+		{
+			outs[i] = rect_moved(shapes[i], _xofs, _yofs)
+		}
+		return outs
+	}
+end
+
+
+function IceBlock () : Block() constructor begin
+	
+	__set_friction(0.02)
+	
+end
+
