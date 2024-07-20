@@ -332,7 +332,6 @@ end
 
 boxcast_context = new RayRectContext2()
 
-
 function __Tracer () constructor begin
 	static __DEFAULT_CB = function (_x, _y) { return false }
 	static __CONT_BATCH = 1
@@ -349,6 +348,7 @@ function __Tracer () constructor begin
 	trailing_cel = vec_create()
 	
 	leading_start = vec_create()
+	trailing_start = vec_create()
 	trailing_offset = vec_create()
 	
 	step = vec_create()
@@ -386,7 +386,7 @@ function __Tracer () constructor begin
 		vec_set_xy(box_min, _x0, _y0)
 		vec_set_xy(box_max, _x1, _y1)
 		vec_set_xy(box_direction, _xdirection, _ydirection)
-		__setup()
+		return __setup()
 	}
 	
 	static set_batch_mode = function (_b)
@@ -419,11 +419,11 @@ function __Tracer () constructor begin
 		
 		for (var i = 0; i < Vec.sizeof; i++)
 		{
-			var rd = box_direction[i]
-			var dp = rd >= 0
+			var ray_dir = box_direction[i]
+			var dp = ray_dir >= 0
 			dir_positive[i] = dp
 			step[i] = dp ? +1 : -1
-			time_delta[i] = rd == 0 ? infinity : abs(1.0 / rd)
+			delta_dist[i] = ray_dir == 0 ? infinity : abs(1.0 / ray_dir)
 			
 			trailing_corner[i] = dp ? box_min[i] : box_max[i]
 			trailing_cel[i] = __trailing_to_cel(trailing_corner[i], step[i])
@@ -432,33 +432,59 @@ function __Tracer () constructor begin
 				? (trailing_corner[i]-trailing_cel[i])
 				: (trailing_cel[i]+1-trailing_corner[i])
 			backwards[i] *= -delta_dist[i]
-			
-			normalized[i] = rd * inverse_max_dist
+			normalized[i] = ray_dir * inverse_max_dist
 		}
+
 		
 		var tc = max(backwards[Vec.x], backwards[Vec.y]) * max_dist
 		
 		for (var i = 0; i < Vec.sizeof; i++)
 		{
-			leading_corner[i] = dp ? box_max[i] : box_min[i]
-			trailing_corner[i] += normalized[i] * tc
+			var dp = dir_positive[i]
+			var dofs = normalized[i] *  tc
+			var pev_l = dp ? box_max[i] : box_min[i]
+			leading_corner[i] = pev_l + dofs
+			var pev_t = trailing_corner[i]
+			trailing_corner[i] += dofs
+			box_direction[i] += pev_t - trailing_corner[i]
+			delta_dist[i] = box_direction[i] == 0 ? infinity : abs(1.0 / box_direction[i])
+			leading_cel[i]  = __leading_to_cel(leading_corner[i], step[i])
+			trailing_cel[i] = __trailing_to_cel(trailing_corner[i], step[i])
 			
-			leading_cel  = __leading_to_cel(leading_corner[i], step[i])
-			trailing_cel = __trailing_to_cel(trailing_corner[i], step[i])
-			
-			next_dist[i] = dir_positive[i]
+			next_dist[i] = dp
 				? (leading_cel[i] + 1 - leading_corner[i])
 				: (leading_corner[i] - leading_cel[i])
-			next_dist[i] *= time_delta[i]
+			next_dist[i] *= delta_dist[i]
 		
 			leading_start[i] = leading_corner[i]
+			trailing_start[i] = trailing_corner[i]
 			trailing_offset[i] = leading_corner[i] - trailing_corner[i]
 		}
+		
+		max_dist = sqrt(vec_sqr_length(box_direction))
+		inverse_max_dist = 1.0 / max_dist
+		
+		draw_circle(trailing_corner[0]-1, trailing_corner[1]-1, 1/16, false)
+		draw_circle(leading_corner[0]-1, leading_corner[1]-1, 1/16, false)
+
+		
+		//draw_set_colour(c_red)
+		//__drawbox()
 		
 		iter_count = __calc_iter_count(leading_corner, box_direction)
 		axis = __lesser_axis()
 		
 		return true
+	}
+	
+	static __drawbox = function ()
+	{
+		draw_primitive_begin(pr_trianglefan)
+		draw_vertex(leading_corner[0], leading_corner[1])
+		draw_vertex(leading_corner[0], trailing_corner[1])
+		draw_vertex(trailing_corner[0], trailing_corner[1])
+		draw_vertex(trailing_corner[0], leading_corner[1])
+		draw_primitive_end()
 	}
 	
 	static __leading_to_cel = function(coord, step)
@@ -479,7 +505,7 @@ function __Tracer () constructor begin
 	static __advance = function ()
 	{
 		var naxis = __lesser_axis()
-
+		
 		current_dist = next_dist[naxis]
 		leading_cel[naxis] += step[naxis]
 		next_dist[naxis] += delta_dist[naxis]
@@ -489,8 +515,9 @@ function __Tracer () constructor begin
 		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			leading_corner[i] = leading_start[i] + normalized[i] * rp
-			trailing_corner[i] = leading_corner[i] - trailing_offset[i]
-			trailing_indices[i] = __trailing_to_cel(trailing_corner[i], step[i])
+			//trailing_corner[i] = leading_corner[i] - trailing_offset[i]
+			trailing_corner[i] = trailing_start[i] + normalized[i] * rp
+			trailing_cel[i] = __trailing_to_cel(trailing_corner[i], step[i])
 		}
 		
 		return naxis
@@ -504,17 +531,66 @@ function __Tracer () constructor begin
 		var x0, y0
 		if axis == Vec.x
 		{
-			x0 = leading_indices[Vec.x]
-			y0 = trailing_indices[Vec.y]
+			x0 = leading_cel[Vec.x]
+			y0 = trailing_cel[Vec.y]
 		}
 		else if axis == Vec.y
 		{
-			x0 = trailing_indices[Vec.x]
-			y0 = leading_indices[Vec.y]
+			x0 = trailing_cel[Vec.x]
+			y0 = leading_cel[Vec.y]
 		}
 
-		var x1 = leading_indices[Vec.x] + step[Vec.x]
-		var y1 = leading_indices[Vec.y] + step[Vec.y]
+		var x1 = leading_cel[Vec.x] + step[Vec.x]
+		var y1 = leading_cel[Vec.y] + step[Vec.y]
+		
+		begin
+			draw_set_color(c_orange)
+			
+			//draw_primitive_begin(pr_linestrip)
+			//draw_vertex(leading_cel[0], leading_cel[1])
+			//draw_vertex(leading_cel[0]+1, leading_cel[1])
+			//draw_vertex(leading_cel[0]+1, leading_cel[1]+1)
+			//draw_vertex(leading_cel[0], leading_cel[1]+1)
+			//draw_vertex(leading_cel[0], leading_cel[1])
+			//draw_primitive_end()
+			
+			var m0 = 0.1
+			var m1 = 1-m0
+			var xx0 = x0
+			var yy0 = y0
+			
+			var xx1 = leading_cel[0]
+			var yy1 = leading_cel[1]
+
+			draw_set_color(c_aqua)
+			draw_set_alpha(0.5)
+			draw_arrow(xx0-1+0.5, yy0-1+0.5, xx1-1+0.5, yy1-1+0.5, 4/16)
+			var tmp = xx0
+			xx0 = min(xx0, xx1)
+			xx1 = max(tmp, xx1)
+			tmp = yy0
+			yy0 = min(yy0, yy1)
+			yy1 = max(tmp, yy1)
+			
+			xx0 += m0
+			yy0 += m0
+			xx1 += m1
+			yy1 += m1
+			
+			draw_set_color(c_yellow)
+			draw_primitive_begin(pr_linestrip)
+			draw_vertex(xx0, yy0)
+			draw_vertex(xx1, yy0)
+			draw_vertex(xx1, yy1)
+			draw_vertex(xx0, yy1)
+			draw_vertex(xx0, yy0)
+			draw_primitive_end()
+			
+			draw_set_alpha(0.5)
+			
+			draw_set_alpha(1)
+			
+		end
 		
 		var xcount = abs(x1-x0)
 		var ycount = abs(y1-y0)
@@ -544,13 +620,17 @@ function __Tracer () constructor begin
 
 	static trace = function ()
 	{
-		axis = __lesser_axis()
+		//axis = __lesser_axis()
 		
 		for (var i = 0; i < iter_count; i++)
 		{
 			var cel_x = leading_cel[Vec.x]
 			var cel_y = leading_cel[Vec.y]
-			
+			draw_set_color(c_purple)
+			draw_set_alpha(0.5)
+			__drawbox()
+			draw_set_color(c_white)
+			draw_set_alpha(1)
 			if __test()
 			{
 				return true
@@ -564,9 +644,79 @@ function __Tracer () constructor begin
 
 end
 
-
+tracer = new __Tracer()
 
 ///@self
+function trace (_get_bloc_callback)
+{
+	hit.reset()
+	
+	static ray_origin = vec_create()
+	static ray_direction = vec_create()
+	static box_min = vec_create()
+	static box_max = vec_create()
+	
+	vec_set_xy(ray_origin, ray.x0(), ray.y0())
+	vec_set_xy(ray_direction, ray.get_dir_x(), ray.get_dir_y())
+	vec_set_xy(box_min, rect_x0(ray.box), rect_y0(ray.box))
+	vec_set_xy(box_max, rect_x1(ray.box), rect_y1(ray.box))
+	
+	//boxcast_context.setup_endpoints(ray.x0(), ray.y0(), ray.x1(), ray.y1())
+	boxcast_context.setup_with_corners(
+		box_min[0],
+		box_min[1],
+		box_max[0],
+		box_max[1],
+		ray_direction[0],
+		ray_direction[1]
+	)
+	
+	var aaa = tracer.setup_corners(
+		box_min[0],
+		box_min[1],//-1,
+		box_max[0],
+		box_max[1],
+		ray_direction[0],
+		ray_direction[1]
+	)
+	
+	begin
+		var dpx = ray_direction[0] >= 0
+		var dpy = ray_direction[1] >= 0
+		var lx1 = dpx ? box_max[0] : box_min[0]
+		var ly1 = dpy ? box_max[1] : box_min[1]
+		var lx0 = dpx ? box_min[0] : box_max[0]
+		var ly0 = dpy ? box_min[1] : box_max[1]
+		
+		draw_primitive_begin(pr_linelist)
+		draw_set_color(c_white)
+		draw_set_alpha(0.75)
+		
+		draw_vertex(lx0, ly1)
+		draw_vertex(lx0+ray_direction[0], ly1+ray_direction[1])
+		
+		draw_vertex(lx1, ly0)
+		draw_vertex(lx1+ray_direction[0], ly0+ray_direction[1])
+		draw_primitive_end()
+		draw_set_color(c_white)
+		draw_set_alpha(1)
+	end
+	
+	if not aaa
+	{
+		return false
+	}
+	
+	if tracer.trace()
+	{
+		return true
+	}
+	
+	return false
+}
+
+#region aaa
+/*
 function trace (_get_bloc_callback)
 {
 	hit.reset()
@@ -748,112 +898,8 @@ function trace (_get_bloc_callback)
 	}
 	return false
 }
-
-/*
-///@self
-function trace (_get_bloc_callback)
-{
-	hit.reset()
-	
-	var ray_xd = ray.get_dir_x()
-	var ray_yd = ray.get_dir_y()
-	
-	var time_max = power(ray_xd, 2) + power(ray_yd, 2)
-	
-	if time_max <= 0
-	{
-		return false
-	}
-	
-	boxcast_context.setup_endpoints(ray.x0(), ray.y0(), ray.x1(), ray.y1())
-
-	
-	static ray_origin = vec_create()
-	static ray_direction = vec_create()
-	static ray_end = vec_create()
-	static cel  = vec_create()
-	static step = vec_create()
-	static time_delta = vec_create()
-	
-	static time_next_backwards = vec_create()
-	static time_next  = vec_create()
-	static normal = vec_create()
-	
-	vec_set_xy(ray_origin, ray.x0(), ray.y0())
-	vec_set_xy(ray_direction, ray.get_dir_x(), ray.get_dir_y())
-
-	time_max = sqrt(time_max)
-
-	for (var i = 0, ivt_t = 1 / time_max; i < Vec.sizeof; i++)
-	{
-		var ro = ray_origin[i]
-		var rd = ray_direction[i]
-		ray_end[i] = ro+rd
-		var dir_positive = rd >= 0
-		step[i] = dir_positive ? +1 : -1
-		cel[i] = floor(ro)
-		time_delta[i] = rd == 0 ? infinity : abs(1.0 / rd)
-		
-		var ta = (ro - cel[i]) * time_delta[i]
-		var tb = (cel[i] + 1 - ro) * time_delta[i]
-		
-		time_next[i] = dir_positive ? tb : ta
-		time_next_backwards[i] = dir_positive ? ta : tb
-		normal[i] = rd * ivt_t
-	}
-	
-	var axis = Vec.x
-	begin
-		var cd = min(time_next_backwards[0], time_next_backwards[1]) * time_max
-		draw_set_color(c_fuchsia)
-		draw_arrow(
-			ray_origin[0]-1,
-			ray_origin[1]-1,
-			ray_origin[0]-normal[0]*cd-1,
-			ray_origin[1]-normal[1]*cd-1,
-			1/16
-		)
-	end
-	var maxiter = abs(floor(ray_end[0])-floor(ray_origin[0]))+abs(floor(ray_end[1])-floor(ray_origin[1]))+1
-	var time = 0
-	while (--maxiter) >= 0
-	{
-		var cel_x = cel[Vec.x]
-		var cel_y = cel[Vec.y]
-		
-		begin
-			draw_set_color(c_orange)
-			draw_primitive_begin(pr_linestrip)
-			draw_vertex(cel_x, cel_y)
-			draw_vertex(cel_x+1, cel_y)
-			draw_vertex(cel_x+1, cel_y+1)
-			draw_vertex(cel_x, cel_y+1)
-			draw_vertex(cel_x, cel_y)
-			draw_primitive_end()
-		end
-		
-		if _get_bloc_callback(cel_x, cel_y)
-		{
-			return true
-		}
-		
-		if time_next[Vec.x] < time_next[Vec.y]
-		{
-			axis = Vec.x
-		}
-		else
-		{
-			axis = Vec.y
-		}
-		
-		time = time_next[axis]
-		time_next[axis] += time_delta[axis]
-		cel[axis] += step[axis]
-		
-	}
-	return false
-}
 */
+#endregion
 
 cam = new Camera()
 m_view = matrix_build_identity()
@@ -902,7 +948,7 @@ trace_predicate = function (_x, _y) {
 
 #region setup
 
-var bbw = (0.6) * 0.5
+var bbw = (.6) * 0.5
 var bbh = 1.8
 rect_set_corners(
 	ray.src_box,
@@ -911,7 +957,6 @@ rect_set_corners(
 	+bbw,
 	bbh
 )
-
 
 create_map(
 	"################",
@@ -935,6 +980,7 @@ cam.x = map.wide / 2
 cam.y = map.tall / 2
 
 trace_predicate = method(self, trace_predicate)
+tracer.set_cel_callback(trace_predicate)
 
 #endregion
 

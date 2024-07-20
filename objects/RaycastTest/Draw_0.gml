@@ -124,13 +124,13 @@ begin
 		draw_vertex(rx1+boxcast_context.normal_x, ry1+boxcast_context.normal_y)
 	}
 	
-	if mouse_check_button_pressed(mb_right)
-	{
-		ray.set_start(
-			ray.get_dir_x()*(hit.time-math_get_epsilon())+rx0,
-			ray.get_dir_y()*(hit.time-math_get_epsilon())+ry0
-		)
-	}
+	//if mouse_check_button_pressed(mb_right)
+	//{
+	//	ray.set_start(
+	//		ray.get_dir_x()*(hit.time-math_get_epsilon())+rx0,
+	//		ray.get_dir_y()*(hit.time-math_get_epsilon())+ry0
+	//	)
+	//}
 	draw_set_alpha(1)
 	draw_primitive_end()
 	
