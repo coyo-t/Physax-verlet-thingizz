@@ -101,4 +101,3 @@ if keyboard_check(vk_shift)
 
 ray.update_box()
 
-

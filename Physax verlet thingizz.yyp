@@ -12,6 +12,7 @@
   "Folders":[
     {"$GMFolder":"","%Name":"object","folderPath":"folders/object.yy","name":"object","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"room","folderPath":"folders/room.yy","name":"room","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"shapes","folderPath":"folders/room/shapes.yy","name":"shapes","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"script","folderPath":"folders/script.yy","name":"script","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"block","folderPath":"folders/script/block.yy","name":"block","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"maths","folderPath":"folders/script/maths.yy","name":"maths","resourceType":"GMFolder","resourceVersion":"2.0",},
@@ -33,6 +34,8 @@
     {"id":{"name":"obj_cbasegame","path":"objects/obj_cbasegame/obj_cbasegame.yy",},},
     {"id":{"name":"RaycastTest","path":"objects/RaycastTest/RaycastTest.yy",},},
     {"id":{"name":"room_raycaster_test","path":"rooms/room_raycaster_test/room_raycaster_test.yy",},},
+    {"id":{"name":"room_shape_sapling","path":"rooms/room_shape_sapling/room_shape_sapling.yy",},},
+    {"id":{"name":"room_shape_superstairs","path":"rooms/room_shape_superstairs/room_shape_superstairs.yy",},},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
     {"id":{"name":"scr_block_registry","path":"scripts/scr_block_registry/scr_block_registry.yy",},},
     {"id":{"name":"scr_block_soundtype","path":"scripts/scr_block_soundtype/scr_block_soundtype.yy",},},
@@ -83,12 +86,15 @@
     {"id":{"name":"sfx_lav_impact","path":"sounds/sfx_lav_impact/sfx_lav_impact.yy",},},
     {"id":{"name":"sfx_put_bloc","path":"sounds/sfx_put_bloc/sfx_put_bloc.yy",},},
     {"id":{"name":"Bfbbtemp","path":"sprites/Bfbbtemp/Bfbbtemp.yy",},},
+    {"id":{"name":"spr_blank","path":"sprites/spr_blank/spr_blank.yy",},},
   ],
   "resourceType":"GMProject",
   "resourceVersion":"2.0",
   "RoomOrderNodes":[
     {"roomId":{"name":"room_raycaster_test","path":"rooms/room_raycaster_test/room_raycaster_test.yy",},},
     {"roomId":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
+    {"roomId":{"name":"room_shape_sapling","path":"rooms/room_shape_sapling/room_shape_sapling.yy",},},
+    {"roomId":{"name":"room_shape_superstairs","path":"rooms/room_shape_superstairs/room_shape_superstairs.yy",},},
   ],
   "templateType":"game",
   "TextureGroups":[
