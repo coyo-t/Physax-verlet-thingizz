@@ -10,6 +10,7 @@
   },
   "defaultScriptType":1,
   "Folders":[
+    {"$GMFolder":"","%Name":"Extensions","folderPath":"folders/Extensions.yy","name":"Extensions","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"object","folderPath":"folders/object.yy","name":"object","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"room","folderPath":"folders/room.yy","name":"room","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"shapes","folderPath":"folders/room/shapes.yy","name":"shapes","resourceType":"GMFolder","resourceVersion":"2.0",},
@@ -22,7 +23,10 @@
     {"$GMFolder":"","%Name":"step","folderPath":"folders/sound/step.yy","name":"step","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"sprite","folderPath":"folders/sprite.yy","name":"sprite","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
-  "IncludedFiles":[],
+  "IncludedFiles":[
+    {"$GMIncludedFile":"","%Name":"ApolloHelp.html","CopyToMask":0,"filePath":"datafiles","name":"ApolloHelp.html","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+    {"$GMIncludedFile":"","%Name":"ApolloHelp.html","CopyToMask":-1,"filePath":"datafiles","name":"ApolloHelp.html","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
+  ],
   "isEcma":false,
   "LibraryEmitters":[],
   "MetaData":{
@@ -30,6 +34,7 @@
   },
   "name":"Physax verlet thingizz",
   "resources":[
+    {"id":{"name":"Apollo","path":"extensions/Apollo/Apollo.yy",},},
     {"id":{"name":"Game","path":"objects/Game/Game.yy",},},
     {"id":{"name":"obj_cbasegame","path":"objects/obj_cbasegame/obj_cbasegame.yy",},},
     {"id":{"name":"RaycastTest","path":"objects/RaycastTest/RaycastTest.yy",},},

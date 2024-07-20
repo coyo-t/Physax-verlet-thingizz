@@ -445,16 +445,223 @@ boxcast_context = new RayRectContext2()
 #macro TRACE_CEL_CONTAINED_COLLIDERS (0b0000_0001)
 #macro TRACE_COLLIDED (0b0000_0010)
 
+function calc_iter_count (_start, _direction)
+{
+	var x0 = _start[0]
+	var y0 = _start[1]
+	var x1 = x0 + _direction[0]
+	var y1 = y0 + _direction[1]
+	return abs(floor(x1)-floor(x0))+abs(floor(y1)-floor(y0))+1
+}
+
+function trace_hull (_get_bloc_callback)
+{
+	trace_reset()
+	hit.reset()
+	
+	var ray_direction = vec_get_temp(
+		ray.get_dir_x(),
+		ray.get_dir_y()
+	)
+	
+	var time_max = vec_sqr_length(ray_direction)
+	
+	if time_max <= 0
+	{
+		return false
+	}
+	
+	var src_rect = ray.box
+	var rect = rect_get_temp(
+		rect_x0(src_rect),
+		rect_y0(src_rect)-1,
+		rect_x1(src_rect),
+		rect_y1(src_rect)
+	)
+	
+	var box_min = vec_get_temp(rect_x0(rect), rect_y0(rect))
+	var box_max = vec_get_temp(rect_x1(rect), rect_y1(rect))
+	
+	boxcast_context.setup_with_corners(
+		rect_x0(src_rect), rect_y0(src_rect),
+		rect_x1(src_rect), rect_y1(src_rect),
+		ray_direction[Vec.x],
+		ray_direction[Vec.y],
+	)
+	
+	var step = vec_get_temp(
+		ray_direction[Vec.x] >= 0 ? +1 : -1,
+		ray_direction[Vec.y] >= 0 ? +1 : -1
+	)
+	
+	// check rect
+	// not ellegant, but "works" :/
+	var did = false
+	begin
+		var xjit = step[Vec.x] * math_get_epsilon()
+		var yjit = step[Vec.y] * math_get_epsilon()
+		var bx0 = floor(rect_x0(rect) + xjit)
+		var by0 = floor(rect_y0(rect) + yjit)
+		var bx1 = floor(rect_x1(rect) - xjit)
+		var by1 = floor(rect_y1(rect) - yjit)
+		
+		var xx, yy
+		for (yy = by0; yy <= by1; yy++)
+		{
+			for (xx = bx0; xx <= bx1; xx++)
+			{
+				draw_set_color(c_purple)
+				draw_set_alpha(0.5)
+				draw_primitive_begin(pr_trianglefan)
+				draw_vertex(xx, yy)
+				draw_vertex(xx+1, yy)
+				draw_vertex(xx+1, yy+1)
+				draw_vertex(xx, yy+1)
+				draw_primitive_end()
+				
+				did |= _get_bloc_callback(xx, yy)
+			}
+		}
+		draw_set_color(c_white)
+		draw_set_alpha(1)
+	end
+	
+	var leading_corner = vec_get_temp()
+	var leading_cel = vec_get_temp()
+	var trailing_corner = vec_get_temp()
+	var trailing_cel = vec_get_temp()
+	
+	var leading_start = vec_get_temp()
+	var trailing_start = vec_get_temp()
+	
+	var step = vec_get_temp()
+	var time_delta = vec_get_temp()
+	
+	var time_next  = vec_get_temp()
+	var normal = vec_get_temp()
+	
+	time_max = sqrt(time_max)
+	var ivt_t = 1 / time_max
+	
+	for (var i = 0; i < Vec.sizeof; i++)
+	{
+		var rd = ray_direction[i]
+		var dir_positive = rd >= 0
+		step[i] = dir_positive ? +1 : -1
+
+		leading_corner[i]  = dir_positive ? box_max[i] : box_min[i]
+		trailing_corner[i] = dir_positive ? box_min[i] : box_max[i]
+		
+		var jit = step[i] * math_get_epsilon()
+		
+		leading_cel[i]  = floor(leading_corner[i]  - jit)
+		trailing_cel[i] = floor(trailing_corner[i] + jit)
+		
+		time_delta[i] = rd == 0 ? infinity : abs(1.0 / rd)
+		
+		time_next[i] = dir_positive
+			? (leading_cel[i] + 1 - leading_corner[i])
+			: (leading_corner[i] - leading_cel[i])
+		time_next[i] *= time_delta[i]
+		
+		normal[i] = rd * ivt_t
+		
+	}
+	
+	vec_set_from(leading_start, leading_corner)
+	vec_set_from(trailing_start, trailing_corner)
+	
+	var axis = -1
+	
+	var maxiter = calc_iter_count(leading_corner, ray_direction) - 1
+	var time = 0
+
+	
+	var xx, yy
+	var stepx = step[Vec.x]
+	var stepy = step[Vec.y]
+	while (--maxiter) >= 0
+	{
+		axis = time_next[Vec.x] < time_next[Vec.y] ? Vec.x : Vec.y
+		
+		begin
+			var dt = time_next[axis] - time
+			time = time_next[axis]
+
+			leading_cel[axis] += step[axis]
+			time_next[axis] += time_delta[axis]
+		
+			for (var i = 0; i < Vec.sizeof; i++)
+			{
+				var nf = normal[i] * time * time_max
+				leading_corner[i] = leading_start[i] + nf
+				trailing_corner[i] = trailing_start[i] + nf
+				trailing_cel[i] = floor(trailing_corner[i] + step[i] * math_get_epsilon())
+			}
+		end
+		
+		begin
+			
+			var x0, y0
+			if axis == Vec.x
+			{
+				x0 = leading_cel[Vec.x]
+				y0 = trailing_cel[Vec.y]
+			}
+			else if axis == Vec.y
+			{
+				x0 = trailing_cel[Vec.x]
+				y0 = leading_cel[Vec.y]
+			}
+
+			var x1 = leading_cel[Vec.x] + step[Vec.x]
+			var y1 = leading_cel[Vec.y] + step[Vec.y]
+		
+			var xcount = abs(x1-x0)
+			var ycount = abs(y1-y0)
+			
+			begin
+				var m0 = 1/16
+				var m1 = 1-m0
+				var xj = 1-(stepx*0.5+0.5)
+				var yj = 1-(stepy*0.5+0.5)
+				var xx0 = min(x0, x1)+m0+xj
+				var yy0 = min(y0, y1)+m0+yj
+				var xx1 = max(x0, x1)-m0+xj
+				var yy1 = max(y0, y1)-m0+yj
+				
+				draw_set_color(c_orange)
+				draw_set_alpha(0.5)
+				draw_primitive_begin(pr_trianglefan)
+				draw_vertex(xx0, yy0)
+				draw_vertex(xx1, yy0)
+				draw_vertex(xx1, yy1)
+				draw_vertex(xx0, yy1)
+				draw_primitive_end()
+			end
+			
+			var yc
+			for (xx = x0; --xcount >= 0; xx+=stepx)
+			{
+				yc = ycount
+				for (yy = y0; --yc >= 0; yy+=stepy)
+				{
+					did |= _get_bloc_callback(xx, yy)
+				}
+			}
+		end
+		
+		//time = time_next[axis]
+		//time_next[axis] += time_delta[axis]
+		//var st = step[axis]
+		//leading_cel[axis] += st
+	}
+
+	return did
+}
+
 function trace (_get_bloc_callback)
 {
-	static calc_iter_count = function (_start, _direction)
-	{
-		var x0 = _start[0]
-		var y0 = _start[1]
-		var x1 = x0 + _direction[0]
-		var y1 = y0 + _direction[1]
-		return abs(floor(x1)-floor(x0))+abs(floor(y1)-floor(y0))+1
-	}
 	
 	trace_reset()
 	hit.reset()
@@ -482,6 +689,8 @@ function trace (_get_bloc_callback)
 		ray_direction[Vec.x],
 		ray_direction[Vec.y],
 	)
+	
+	
 	
 	var cel  = vec_get_temp()
 	var step = vec_get_temp()
@@ -545,15 +754,6 @@ function trace (_get_bloc_callback)
 			)
 		}
 		
-		draw_primitive_begin(pr_trianglefan)
-		draw_set_color(c_orange)
-		draw_set_alpha(0.25)
-		draw_vertex(cel_x, cel_y)
-		draw_vertex(cel_x+1, cel_y)
-		draw_vertex(cel_x+1, cel_y+1)
-		draw_vertex(cel_x, cel_y+1)
-		draw_primitive_end()
-		
 		var did = _get_bloc_callback(cel_x, cel_y)
 		
 		var did_down = TRACE_FALSE
@@ -562,47 +762,13 @@ function trace (_get_bloc_callback)
 			did_down = _get_bloc_callback(cel_x, cel_y - 1)
 		}
 		
-		if down_search
-		{
-			var dsx = cel_x
-			var dsy = cel_y - 1
-			draw_primitive_begin(pr_trianglefan)
-			draw_set_color(c_fuchsia)
-			var m0 = 0.1
-			var m1 = 1-m0
-			
-			var x0 = dsx+m0
-			var y0 = dsy+m0
-			var x1 = dsx+m1
-			var y1 = dsy+m1
-			
-			draw_set_alpha(0.25)
-			draw_vertex(x0, y0)
-			draw_vertex(x1, y0)
-			draw_vertex(x1, y1)
-			draw_vertex(x0, y1)
-			draw_primitive_end()
-			draw_arrow(
-				cel_x-1+0.5,
-				cel_y-1+0.5,
-				dsx-1+0.5,
-				dsy-1+0.5,
-				1/16
-			)
-		}
-		
-		draw_set_color(c_white)
-		draw_set_alpha(1)
-		
-		pev_x = cel_x
-		pev_y = cel_y
-		
 		if ((did | did_down) & TRACE_COLLIDED) <> 0
 		{
 			return true
 		}
 		
-		var dt = time-time_next[axis]
+		pev_x = cel_x
+		pev_y = cel_y
 		time = time_next[axis]
 		time_next[axis] += time_delta[axis]
 		cel[axis] += step[axis]
@@ -693,7 +859,44 @@ trace_predicate = function (_x, _y) {
 	return TRACE_CEL_CONTAINED_COLLIDERS | (TRACE_COLLIDED * any)
 }
 
-
+trace_predicate2 = function (_x, _y) {
+	static COLLIDERS = ds_list_create()
+	ds_list_clear(COLLIDERS)
+	
+	var type = map.get(_x, _y)
+	var cc = type.get_colliders(map, _x, _y, COLLIDERS)
+	if cc <= 0
+	{
+		return false
+	}
+	var any = false
+	var temp_rect = rect_get_temp()
+	for (var i = cc; --i >= 0;)
+	{
+		var collider = rect_set_from(temp_rect, COLLIDERS[| i])
+		var taller = rect_y1(collider) > 1
+		rect_move(collider, _x, _y)
+		var test = boxcast_context.test(
+			rect_x0(collider),
+			rect_y0(collider),
+			rect_x1(collider),
+			rect_y1(collider)
+		)
+		if test
+		{
+			var tt = boxcast_context.near_time
+			if tt < trace_nearest
+			{
+				any = true
+				trace_nearest = tt
+				rect_set_from(trace_nearest_box, collider)
+				vec_set_xy(trace_nearest_normal, boxcast_context.normal_x, boxcast_context.normal_y)
+			}
+		}
+	}
+	trace_any |= any
+	return any
+}
 
 #region setup
 
@@ -714,7 +917,7 @@ create_map(
 	"#              #",
 	"#      P       #",
 	"  _         |  #",
-	"| |       | |  #",
+	"| |     T | |  #",
 	"###     #####  #",
 	"#              #",
 	"#              #",
@@ -728,8 +931,8 @@ create_map(
 cam.x = map.wide / 2
 cam.y = map.tall / 2
 
-trace_predicate = method(self, trace_predicate)
-//tracer.set_cel_callback(trace_predicate)
+trace_predicate  = method(self, trace_predicate)
+trace_predicate2 = method(self, trace_predicate2)
 
 #endregion
 

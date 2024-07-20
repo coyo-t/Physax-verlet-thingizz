@@ -74,8 +74,11 @@ begin
 
 end
 
-trace(trace_predicate)
-
+//trace(trace_predicate)
+trace_hull(trace_predicate2)
+draw_set_color(c_white)
+draw_set_alpha(1)
+	
 draw_set_color(c_yellow)
 draw_primitive_begin(pr_linelist)
 var rr = 0.25
@@ -99,6 +102,7 @@ if trace_any
 	draw_set_alpha(1)
 }
 
+ray.draw_box()
 
 begin
 	//draw_set_alpha(0.5)
@@ -127,7 +131,10 @@ begin
 	{
 		draw_set_alpha(0.5)
 	}
-	
+	ray.draw_box(
+		rx1-rx0,
+		ry1-ry0
+	)
 end
 
 draw_set_alpha(1)

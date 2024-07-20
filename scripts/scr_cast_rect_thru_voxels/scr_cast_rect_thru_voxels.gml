@@ -176,37 +176,39 @@ constructor begin
 		static pev_y0 = 0
 		static pev_c = 0
 		
-		draw_primitive_begin(pr_linestrip)
-		draw_set_color(c_orange)
-		draw_set_alpha(0.5)
-		draw_vertex(trailing_corner[0], trailing_corner[1])
-		draw_vertex(leading_corner[0],  trailing_corner[1])
-		draw_vertex(leading_corner[0],  leading_corner[1])
-		draw_vertex(trailing_corner[0], leading_corner[1])
-		draw_vertex(trailing_corner[0], trailing_corner[1])
-		draw_primitive_end()
-		draw_set_alpha(1.0)
+		begin
+			draw_primitive_begin(pr_linestrip)
+			draw_set_color(c_orange)
+			draw_set_alpha(0.5)
+			draw_vertex(trailing_corner[0], trailing_corner[1])
+			draw_vertex(leading_corner[0],  trailing_corner[1])
+			draw_vertex(leading_corner[0],  leading_corner[1])
+			draw_vertex(trailing_corner[0], leading_corner[1])
+			draw_vertex(trailing_corner[0], trailing_corner[1])
+			draw_primitive_end()
+			draw_set_alpha(1.0)
 		
-		draw_primitive_begin(pr_trianglefan)
-		draw_set_color(c_orange)
-		draw_set_alpha(0.5)
-		var juandeeg = 1/16
-		var juandeez = 1-juandeeg
-		draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeeg)
-		draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeeg)
-		draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeez)
-		draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeez)
-		draw_primitive_end()
-		draw_set_alpha(1.0)
+			draw_primitive_begin(pr_trianglefan)
+			draw_set_color(c_orange)
+			draw_set_alpha(0.5)
+			var juandeeg = 1/16
+			var juandeez = 1-juandeeg
+			draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeeg)
+			draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeeg)
+			draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeez)
+			draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeez)
+			draw_primitive_end()
+			draw_set_alpha(1.0)
 		
-		draw_set_color(c_lime)
-		draw_set_alpha(0.5)
-		draw_arrow(
-			leading_corner[0]-1, leading_corner[1]-1,
-			leading_indices[0]-1+0.5, leading_indices[1]-1+0.5,
-			1/16
-		)
-		draw_set_alpha(1.)
+			draw_set_color(c_lime)
+			draw_set_alpha(0.5)
+			draw_arrow(
+				leading_corner[0]-1, leading_corner[1]-1,
+				leading_indices[0]-1+0.5, leading_indices[1]-1+0.5,
+				1/16
+			)
+			draw_set_alpha(1.)
+		end
 		
 		var stepx = step[Vec.x]
 		var stepy = step[Vec.y]
