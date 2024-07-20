@@ -1,25 +1,20 @@
 function Camera () constructor begin
 	
-	///@type {Real}
-	x = 0
-	///@type {Real}
-	y = 0
-	///@type {Real}
-	zoom = 25
-	///@type {Real}
-	rcpzoom = 1 / zoom
-	///@type {Real}
-	aspect = 1
+	x = 0; ///@is {number}
+	y = 0; ///@is {number}
+	zoom = 25; ///@is {number}
+	rcpzoom = 1 / zoom; ///@is {number}
+	aspect = 1; ///@is {number}
 	
-	///@func set_zoom(_zoom)
-	///@arg {Real} _zoom
-	static set_zoom = function (_zoom)
+	static set_zoom = function (_zoom/*:number*/) /*-> void*/
 	{
 		zoom = _zoom
 		rcpzoom = 1 / _zoom
 	}
 	
-	///@func get_rcp_zoom
-	static get_rcp_zoom = function () { return rcpzoom }
+	static get_rcp_zoom = function () /*-> number*/
+	{
+		return rcpzoom
+	}
 
 end

@@ -1,9 +1,9 @@
 {
   "$GMScript":"",
-  "%Name":"scr_blocks",
+  "%Name":"scr_vec",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_blocks",
+  "name":"scr_vec",
   "parent":{
     "name":"Physax verlet thingizz",
     "path":"Physax verlet thingizz.yyp",

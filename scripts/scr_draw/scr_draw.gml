@@ -1,5 +1,10 @@
 
-function draw_rectangle_size (_x, _y, _wide, _tall, _outline)
+function draw_rectangle_size (
+	_x/*:number*/,
+	_y/*:number*/,
+	_wide/*:number*/,
+	_tall/*:number*/,
+	_outline/*:bool*/)
 {
 	var x1 = _x+_wide
 	var y1 = _y+_tall

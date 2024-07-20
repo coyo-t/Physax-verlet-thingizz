@@ -1,7 +1,13 @@
 
-function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begin
+//!#import vec.* in Vec
 
-	self.maxx = maxx
+function RectVoxelSweeper (
+	getVoxel,
+	callback,
+	vec/*:Vec*/,
+	base/*:Vec*/,
+	maxx/*:Vec*/
+) constructor begin
 
 	// consider algo as a raycast along the AABB's leading corner
 	// as raycast enters each new voxel, iterate in 2D over the AABB's 
@@ -10,28 +16,29 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 	// original raycast implementation: https://github.com/fenomas/fast-voxel-raycast
 	// original raycast paper: http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 	
-	self.callback = callback
-	self.getVoxel = getVoxel
-	self.vec = vec
-	self.base = base
+	self.maxx = maxx; ///@is {Vec}
+	self.callback = callback;
+	self.getVoxel = getVoxel;
+	self.vec = vec; ///@is {Vec}
+	self.base = base; ///@is {Vec}
 	
-	self.tr = []
-	self.ldi = []
-	self.tri = []
-	self.step = []
-	self.tDelta = []
-	self.tNext = []
-	self.normed = []
-	cumulative_t = 0.0
-	t = 0.0
-	max_t = 0.0
-	axis = 0
+	tr = vec_create(); ///@is {Vec}
+	ldi = vec_create(); ///@is {Vec}
+	tri = vec_create(); ///@is {Vec}
+	step = vec_create(); ///@is {Vec}
+	tDelta = vec_create(); ///@is {Vec}
+	tNext = vec_create(); ///@is {Vec}
+	normed = vec_create(); ///@is {Vec}
+	cumulative_t = 0.0; ///@is {number}
+	t = 0.0; ///@is {number}
+	max_t = 0.0; ///@is {number}
+	axis = 0; ///@is {int}
 	
-	static run = function ()
+	static run = function () /*-> number*/
 	{
 		// init for the current sweep vector and take first step
 		initSweep()
-		if (max_t == 0)
+		if max_t == 0
 		{
 			return 0
 		}
@@ -39,14 +46,14 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		axis = stepForward()
 
 		// loop along raycast vector
-		while (t <= max_t)
+		while t <= max_t
 		{
 			// sweeps over leading face of AABB
-			if (checkCollision(axis))
+			if checkCollision(axis)
 			{
 				// calls the callback and decides whether to continue
 				var done = handleCollision()
-				if (done)
+				if done
 				{
 					return cumulative_t
 				}
@@ -56,28 +63,26 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 
 		// reached the end of the vector unobstructed, finish and exit
 		cumulative_t += max_t
-		for (var i = 0; i < 2; i++)
-		{
-			base[i] += vec[i]
-			maxx[i] += vec[i]
-		}
+		
+		vec_add_vec(base, vec)
+		vec_add_vec(maxx, vec)
+
 		return cumulative_t
 	}
 
 	// low-level implementations of each step:
 	static initSweep = function ()
 	{
-
 		// parametrization t along raycast
 		t = 0.0
 		
-		max_t = vec[0] * vec[0] + vec[1] * vec[1]
+		max_t = vec_sqr_length(vec)
 		if max_t == 0
 		{
 			return
 		}
 		max_t = sqrt(max_t)
-		for (var i = 0; i < 2; i++)
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			var dir = (vec[i] >= 0)
 			step[i] = dir ? 1 : -1
@@ -100,7 +105,7 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 
 
 	// check for collisions - iterate over the leading face on the advancing axis
-	static checkCollision = function (i_axis)
+	static checkCollision = function (i_axis/*:int*/) /*-> bool*/
 	{
 		var stepx = step[0]
 		var x0 = (i_axis == 0) ? ldi[0] : tri[0]
@@ -125,7 +130,7 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 
 
 	// on collision - call the callback and return or set up for the next sweep
-	static handleCollision = function ()
+	static handleCollision = function () /*-> bool*/
 	{
 		// set up for callback
 		cumulative_t += t
@@ -134,7 +139,7 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		// vector moved so far, and left to move
 		var done = t / max_t
 		var left = left_arr
-		for (var i = 0; i < 2; i++)
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			var dv = vec[i] * done
 			base[i] += dv
@@ -146,7 +151,7 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		// else we'll sometimes rounding error beyond it
 		if (dir > 0)
 		{
-			max[axis] = floor(maxx[axis] + 0.5)
+			maxx[axis] = floor(maxx[axis] + 0.5)
 		}
 		else
 		{
@@ -163,23 +168,21 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		}
 
 		// init for new sweep along vec
-		for (var i = 0; i < 2; i++)
-		{
-			vec[i] = left[i]
-		}
+		
+		vec_add_vec(vec, left)
 		initSweep()
 		if max_t == 0
 		{
 			return true // no vector left
 		}
 		return false
-    }
+	}
 
 
 	// advance to next voxel boundary, and return which axis was stepped
-	static stepForward = function ()
+	static stepForward = function () /*-> int*/
 	{
-		var axis = tNext[0] < tNext[1] ? 0 : 1
+		var axis = tNext[0] < tNext[1] ? Vec.x : Vec.y
 		
 		//var axis = (tNext[0] < tNext[1]) ?
 		//	((tNext[0] < tNext[2]) ? 0 : 2) :
@@ -188,7 +191,7 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		t = tNext[axis]
 		ldi[axis] += step[axis]
 		tNext[axis] += tDelta[axis]
-		for (var i = 0; i < 2; i++)
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			tr[i] += dt * normed[i]
 			tri[i] = trailEdgeToInt(tr[i], step[i])
@@ -197,11 +200,11 @@ function RectVoxelSweeper (getVoxel, callback, vec, base, maxx) constructor begi
 		return axis
 	}
 
-	static leadEdgeToInt = function(coord, step)
+	static leadEdgeToInt = function(coord/*:number*/, step/*:number*/) /*-> int*/
 	{
 		return floor(coord - step * EPS)
 	}
-	static trailEdgeToInt = function (coord, step)
+	static trailEdgeToInt = function (coord/*:number*/, step/*:number*/) /*-> int*/
 	{
 		return floor(coord + step * EPS)
 	}

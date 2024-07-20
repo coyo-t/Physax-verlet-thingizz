@@ -1,4 +1,4 @@
-function Timer (_tps) constructor begin
+function Timer (_tps/*: int*/) constructor begin
 	static MICROS_PER_SECOND = 1000000
 	
 	ticksPerSecond = 0
@@ -13,14 +13,14 @@ function Timer (_tps) constructor begin
 	
 	set_tps(_tps)
 	
-	static set_tps = function (tps)
+	static set_tps = function (tps/*:int*/)
 	{
 		ticksPerSecond = tps
 		rcpTps = 1.0 / tps
 		ticksPerNs = tps/MICROS_PER_SECOND
 	}
 	
-	static step = function ()
+	static step = function () /*-> int*/
 	{
 		var now = get_timer()
 		deltaTime = (now-pevTime)*ticksPerNs
@@ -32,17 +32,17 @@ function Timer (_tps) constructor begin
 		return ticks
 	}
 	
-	static get_tps = function ()
+	static get_tps = function () /*-> number*/
 	{
 		return ticksPerSecond
 	}
 	
-	static get_tps_reciprocal = function ()
+	static get_tps_reciprocal = function () /*-> number*/
 	{
 		return rcpTps
 	}
 	
-	static get_tfac = function ()
+	static get_tfac = function () /*-> number*/
 	{
 		return tfac
 	}

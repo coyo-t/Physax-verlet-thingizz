@@ -1,11 +1,13 @@
+//!#import rect.* in Rect
 
 draw_set_colour(c_yellow)
 draw_text(32, 32, $"dist: {string_format(walk_dist, 0, 8)}\nnext: {next_step}")
 draw_set_color(c_white)
 
 begin
-	var paint = palette[current_paint]
+	var paint/*:Block*/ = palette[current_paint]
 	var topc = paint.colour
+	var pshape/*:Rect*/ = paint.shape
 	var ns_c = merge_color(c_black, topc, 0.8)
 	var ew_c = merge_color(c_black, topc, 0.6)
 	matrix_push(matrix_world)
@@ -17,9 +19,9 @@ begin
 	matrix_set(matrix_world, matrix_build(pic_x, pic_y, 0, 0,0,0, pic_scale, -pic_scale, 1))
 	draw_primitive_begin(pr_trianglelist)
 	
-	var hofs = (1-paint.shape.get_tall()) * 1.1
-	var x0 = paint.shape.x0
-	var x1 = paint.shape.x1
+	var hofs = (1-rect_get_tall(pshape)) * 1.1
+	var x0 = pshape[Rect.x0]
+	var x1 = pshape[Rect.x1]
 	// top
 	draw_vertex_color(0, 0-hofs, topc, 1)
 	draw_vertex_color(1, 0.5-hofs, topc, 1)

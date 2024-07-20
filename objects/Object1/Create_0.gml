@@ -1,34 +1,31 @@
 
+//!#import rect.* in Rect
+
 #macro MODE_OBJECT  0
 #macro MODE_EDIT    1
 #macro MODE_COMMAND 2
 
-///@type {Array<Asset.GMSound}
-step_sounds_generic = tag_get_asset_ids("pl_step_generic", asset_sound)
+step_sounds_generic = get_sound_set("pl_step_generic") ///@is{array<sound>}
 
-tick = method(self, function () {
+tick = method(self, function() /*=>*/ {
 	player_xprevious = player_x
 	player_yprevious = player_y
-	player_previous_box.set_from(player_box)
+	rect_set_from(player_previous_box, player_box)
 	tick_player()
 })
 
-///@type {Struct.Timer}
-timer = new Timer(20)
+timer = new Timer(20) ///@is {Timer}
 timer.time_scale = 1
 
-///@type {Struct.Rect}
-tempHitbox = new Rect(0,0,0,0)
+tempHitbox = rect_create(0,0,0,0) ///@is {Rect}
 
-///@type {Struct.Rect}
-tempRect2 = new Rect(0,0,0,0)
+tempRect2 = rect_create(0,0,0,0) ///@is {Rect}
 
+map = new Map(16, 8) ///@is {Map}
 
-///@type {Struct.Map}
-map = new Map(16, 8)
+map.fill_region(0, 0, map.wide, 1, global.stone)
 
-///@type {Struct.Camera}
-cam = new Camera()
+cam = new Camera() ///@is {Camera}
 
 cam.x = map.wide / 2
 cam.y = map.tall / 2
@@ -40,36 +37,22 @@ m_inv_proj_view = matrix_build_identity()
 cursor_x = 0
 cursor_y = 0
 
-///@type {Array<Struct.Block>}
-palette = array_filter(global.blocks_all, function (bloc) {
-	return bloc.show_in_palette()
-})
+palette = array_filter(global.blocks_all, function(bloc) /*=>*/ {return bloc.show_in_palette()}) ///@is{array<Block>}
 
-current_paint = 0
+current_paint = 0 ///@is{int}
 
-///@type {Real}
-player_x = 0
+player_x = 0 ///@is{number}
+player_y = 0 ///@is{number}
 
-///@type {Real}
-player_y = 0
+player_xprevious = 0 ///@is{number}
+player_yprevious = 0 ///@is{number}
 
-player_xprevious = 0
-player_yprevious = 0
+player_wide = 0.6 ///@is{number}
+player_tall = 1.8 ///@is{number}
 
-///@type {Real}
-player_wide = 0.6
-
-///@type {Real}
-player_tall = 1.8
-
-///@type {Struct.Rect}
-player_box = new Rect(0,0,0,0)
-
-///@type {Struct.Rect}
-player_box_absolute = new Rect(0,0,0,0)
-
-///@type {Struct.Rect}
-player_previous_box = new Rect(0,0,0,0)
+player_box = rect_create(0,0,0,0) ///@is{Rect}
+player_box_absolute = rect_create(0,0,0,0) ///@is{Rect}
+player_previous_box = rect_create(0,0,0,0) ///@is{Rect}
 
 allow_jump_refire = 0
 
@@ -91,12 +74,13 @@ foot_size = 0.6
 make_step_sounds = true
 next_step = 0
 
-function update_player_co (_x, _y, _include_pev=false)
+function update_player_co (_x/*:number*/, _y/*:number*/, _include_pev=false)
 {
 	player_x = _x
 	player_y = _y
 	var hwide = player_wide * 0.5
-	player_box_absolute.set_corners(
+	rect_set_corners(
+		player_box_absolute,
 		-hwide,
 		0,
 		+hwide,
@@ -108,30 +92,26 @@ function update_player_co (_x, _y, _include_pev=false)
 	{
 		player_xprevious = player_x
 		player_yprevious = player_y
-		player_previous_box.set_from(player_box)
+		rect_set_from(player_previous_box, player_box)
 	}
 }
 
 function sync_player_box_with_co ()
 {
-	player_box
-	.set_from(player_box_absolute)
-	.move(player_x, player_y-height_offset+y_slide_offset)
+	rect_set_from(player_box, player_box_absolute)
+	rect_move(player_box, player_x, player_y-height_offset+y_slide_offset)
 }
 
 function sync_player_co_with_box ()
 {
-	player_x = (player_box.x0 + player_box.x1) * 0.5
-	player_y = player_box.y0 + height_offset - y_slide_offset
+	player_x = (player_box[Rect.x0] + player_box[Rect.x1]) * 0.5
+	player_y = player_box[Rect.y0] + height_offset - y_slide_offset
 }
 
 //update_player_co(map.wide * 0.5, map.tall)
 update_player_co(map.wide * 0.5, 1.5, true)
 
-///@func move
-///@arg {Real} delta_x
-///@arg {Real} delta_y
-function move (xDirection, yDirection)
+function move (xDirection/*:number*/, yDirection/*:number*/)
 {
 	y_slide_offset *= 0.4
 	var x_begin = player_x
@@ -144,27 +124,30 @@ function move (xDirection, yDirection)
 	//	yDirection = beginYD = modv.y;
 	//}
 	
-	tempHitbox.set_from(player_box);
-	var broadPhase = map.get_colliders(player_box.expand(xDirection, yDirection));
-		
-	// y axis
-	for (var i = 0; i < array_length(broadPhase);)
-	{
-		var box = broadPhase[i++]
-		yDirection = box.clip_y_collide(player_box, yDirection)
-	}
-	player_box.move(0, yDirection)
-		
-	var hitGround = on_ground or (yDirection <> beginYD && beginYD < 0)
-		
-	// x axis
-	for (var i = 0; i < array_length(broadPhase);)
-	{
-		var box = broadPhase[i++]
-		xDirection = box.clip_x_collide(player_box, xDirection)
-	}
-	player_box.move(xDirection, 0)
+	rect_set_from(tempHitbox, player_box)
+	var broadPhase/*:array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection));
 	
+	begin
+		// y axis
+		var box/*:Rect*/
+		for (var i = 0; i < array_length(broadPhase);)
+		{
+			box = broadPhase[i++]
+			yDirection = rect_clip_y_collide(box, player_box, yDirection)
+		}
+		rect_move(player_box, 0, yDirection)
+		
+		var hitGround = on_ground or (yDirection <> beginYD && beginYD < 0)
+			
+		// x axis
+		for (var i = 0; i < array_length(broadPhase);)
+		{
+			box = broadPhase[i++]
+			xDirection = rect_clip_x_collide(box, player_box, xDirection)
+		}
+		rect_move(player_box, xDirection, 0)
+		
+	end
 	var xCollided = beginXD <> xDirection
 
 	// if we've horizontally collided, try to see if we can go further by moving by
@@ -176,43 +159,46 @@ function move (xDirection, yDirection)
 		xDirection = beginXD
 		yDirection = foot_size
 		
-		tempRect2.set_from(player_box);
-		player_box.set_from(tempHitbox);
-		var cubz = map.get_colliders(player_box.expand(xDirection, yDirection))
+		rect_set_from(tempRect2, player_box)
+		rect_set_from(player_box, tempHitbox)
+		var cubz/*: array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection))
+		var box/*:Rect*/
 		
 		for (var i = 0; i < array_length(cubz);)
 		{
-			var box = cubz[i++]
-			yDirection = box.clip_y_collide(player_box, yDirection)
+			box = cubz[i++]
+			yDirection = rect_clip_y_collide(box, player_box, yDirection)
 		}
-		player_box.move(0, yDirection)
-
+		rect_move(player_box, 0, yDirection)
+		
 		for (var i = 0; i < array_length(cubz);)
 		{
-			var box = cubz[i++]
-			xDirection = box.clip_x_collide(player_box, xDirection)
+			box = cubz[i++]
+			xDirection = rect_clip_x_collide(box, player_box, xDirection)
 		}
-		player_box.move(xDirection, 0)
-
+		rect_move(player_box, xDirection, 0)
+		
 		{
 			yDirection = -foot_size
 			// This isnt very efficent, but it should solve the issue of very occasionally
 			// missing a block when upstepping after hitting our head in the above steps
 			// (and thusly bogusly setting our hitbox to be clipping into it when moving down here)
-			var bogus = map.get_colliders(player_box.expand(bx, yDirection))
-			for (var i = 0; i < array_length(bogus);)
+			
+			var ttmp/*: array<Rect>*/ = map.get_colliders(rect_expand(player_box, bx, yDirection))
+			
+			for (var i = 0; i < array_length(ttmp);)
 			{
-				var box = bogus[i++]
-				yDirection = box.clip_y_collide(player_box, yDirection)
+				box = ttmp[i++]
+				yDirection = rect_clip_y_collide(box, player_box, yDirection)
 			}
-			player_box.move(0, yDirection);
+			rect_move(player_box, 0, yDirection)
 		}
 
 		if abs(bx) >= abs(xDirection)
 		{
 			xDirection = bx;
 			yDirection = by;
-			player_box.set_from(tempRect2);
+			rect_set_from(player_box, tempRect2)
 		}
 		else
 		{
@@ -220,8 +206,8 @@ function move (xDirection, yDirection)
 			// this is to mask the jitters from walking across a corner like this:
 			// Xx (x is the floor, X is 1 block above)
 			// x
-			var slideDelta = player_box.y0 - tempRect2.y0
-			if slideDelta > 0 and (player_box.y0 <> tempHitbox.y0)
+			var slideDelta = player_box[Rect.y0] - tempRect2[Rect.y0]
+			if slideDelta > 0 and (player_box[Rect.y0] <> tempHitbox[Rect.y0])
 			{
 				y_slide_offset += slideDelta + 0.01
 			}
@@ -261,6 +247,7 @@ function move (xDirection, yDirection)
 	{
 		fall_distance -= yDirection
 	}
+
 	if xCollided
 	{
 		speed_x = 0
