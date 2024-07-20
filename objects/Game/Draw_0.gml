@@ -251,9 +251,26 @@ begin
 	draw_primitive_end()
 	
 end
-	
-	
-draw_set_color(c_white)
 
+draw_primitive_begin(pr_linelist)
+draw_set_alpha(0.5)
+draw_set_color(c_grey)
+
+for (var xx = map.wide; --xx > 0; )
+{
+	draw_vertex(xx, 0)
+	draw_vertex(xx, map.tall)
+}
+
+for (var yy = map.tall; --yy > 0; )
+{
+	draw_vertex(0, yy)
+	draw_vertex(map.wide, yy)
+}
+
+draw_primitive_end()
+
+draw_set_color(c_white)
+draw_set_alpha(1)
 
 

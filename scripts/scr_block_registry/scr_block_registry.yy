@@ -6,7 +6,7 @@
   "name":"scr_block_registry",
   "parent":{
     "name":"block",
-    "path":"folders/scripts/block.yy",
+    "path":"folders/script/block.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

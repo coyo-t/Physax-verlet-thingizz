@@ -109,5 +109,9 @@ function vec_add_vec (_self/*:Vec*/, _other/*:Vec*/) /*-> Vec*/
 	return vec_add_xy(_self, _other[Vec.x], _other[Vec.y])
 }
 
-
-
+function vec_floor (_self/*Vec*/)/*Vec*/
+{
+	_self[Vec.x] = floor(_self[Vec.x])
+	_self[Vec.y] = floor(_self[Vec.y])
+	return _self
+}

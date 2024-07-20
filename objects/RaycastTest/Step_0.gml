@@ -1,3 +1,39 @@
+var mdelta = mouse_wheel_down() - mouse_wheel_up()
+
+if mdelta <> 0
+{
+	cam.set_zoom(cam.zoom * exp(mdelta * (1/16)))	
+}
+
+if mouse_check_button(mb_middle)
+{
+	var mxd = +window_mouse_get_delta_x()
+	var myd = -window_mouse_get_delta_y()
+	
+	var ss = 1/window_get_height()*cam.zoom
+	
+	cam.x -= mxd * ss
+	cam.y -= myd * ss
+}
+
+var cursor_moved = false
+begin
+	var zoom = cam.zoom
+
+	var mx = display_mouse_get_x()-window_get_x()
+	var my = display_mouse_get_y()-window_get_y()
+
+	mx = (mx / window_get_width())*2-1
+	my = (1-my / window_get_height())*2-1
+
+	mx = mx * (zoom*0.5) * cam.aspect + cam.x
+	my = my * (zoom*0.5) + cam.y
+	
+	mouse.world_x = mx
+	mouse.world_y = my
+	
+end
+
 var map_wide = map.wide
 var map_tall = map.tall
 
@@ -18,58 +54,51 @@ mouse.y = win_mouse_y
 mouse.map_x = mx
 mouse.map_y = my
 
-ray.x1 = mx
-ray.y1 = my
+ray.set_end(
+	mouse.world_x,
+	mouse.world_y
+)
+
+var pev_rx0 = ray.start_point[Vec.x]
+var pev_ry0 = ray.start_point[Vec.y]
 
 if mouse_check_button(mb_left)
 {
-	ray.x0 = mx
-	ray.y0 = my
+	ray.set_start(
+		mouse.world_x,
+		mouse.world_y
+	)
 }
 else
 {
 	var dt = delta_time / 1000000
 	var xd = (keyboard_check(ord("D"))-keyboard_check(ord("A")))*10*dt
-	var yd = (keyboard_check(ord("S"))-keyboard_check(ord("W")))*10*dt
+	var yd = (keyboard_check(ord("W"))-keyboard_check(ord("S")))*10*dt
 
-	ray.x0 += xd
-	ray.y0 += yd
+	vec_add_xy(ray.start_point, xd, yd)
 }
 
+if keyboard_check_pressed(vk_control)
+{
+	vec_floor(ray.start_point)
+}
 
-hit.did = trace(method(self, function (_x, _y) {
-	var type = map.get(_x, _y)
-	var cc = type.collider_count()
-	if cc <= 0
+if keyboard_check(vk_shift)
+{
+	var sp = ray.start_point
+	var ep = ray.end_point
+	var axis
+	if abs(ep[Vec.x]-sp[Vec.x]) > abs(ep[Vec.y]-sp[Vec.y])
 	{
-		return false
+		axis = Vec.y
 	}
-	
-	var any = false
-	var nearest = infinity
-	var colliders = type.collision_shapes
-	
-	for (var i = cc; --i >= 0;)
+	else
 	{
-		var collider = colliders[i]
-		var test = boxcast_context.test(
-			_x+rect_x0(collider),
-			_y+rect_y0(collider),
-			_x+rect_x1(collider),
-			_y+rect_y1(collider)
-		)
-		if test
-		{
-			any = true
-			nearest = min(boxcast_context.hit_time, nearest)
-		}
+		axis = Vec.x
 	}
-	
-	if nearest <> infinity
-	{
-		hit.time = nearest
-	}
-	
-	return any
-}))
+	ep[axis] = sp[axis]
+}
+
+ray.update_box()
+
 

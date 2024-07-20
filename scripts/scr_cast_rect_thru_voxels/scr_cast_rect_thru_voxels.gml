@@ -60,7 +60,7 @@ constructor begin
 		// that extends above their grid cell. Technically, only need to subtract
 		// 0.5, since fences (and fence-likes) afaicr are the only blocs that do this
 		// but its good to future proof v_v
-		box_min[Vec.y] -= 1
+		//box_min[Vec.y] -= 1
 	}
 	
 	static run = function ()/*Value*/
@@ -78,6 +78,8 @@ constructor begin
 			return 0
 		}
 		
+		// TODO: initial state of leading/trailing indices is cast backwards
+		
 		draw_arrow(
 			leading_corner[Vec.x]-1,
 			leading_corner[Vec.y]-1,
@@ -87,8 +89,8 @@ constructor begin
 		)
 		
 		axis = lesser_axis()
-		//axis = advance_step()
-
+		axis = advance_step()
+		
 		// loop along raycast vector
 		//while time <= min(time_max, hard_time_limit_s)
 		while time <= time_max
@@ -106,6 +108,12 @@ constructor begin
 			}
 			iterations++
 			axis = advance_step()
+			
+			//if iterations == 2
+			//{
+			//	break
+			//}
+			
 		}
 	}
 	
@@ -153,6 +161,7 @@ constructor begin
 		
 		for (var i = 0; i < Vec.sizeof; i++)
 		{
+			leading_corner[i] += normalized[i] * dt
 			trailing_corner[i] += normalized[i] * dt
 			trailing_indices[i] = trailing_edge_to_int(trailing_corner[i], step[i])
 		}
@@ -167,11 +176,55 @@ constructor begin
 		static pev_y0 = 0
 		static pev_c = 0
 		
+		draw_primitive_begin(pr_linestrip)
+		draw_set_color(c_orange)
+		draw_set_alpha(0.5)
+		draw_vertex(trailing_corner[0], trailing_corner[1])
+		draw_vertex(leading_corner[0],  trailing_corner[1])
+		draw_vertex(leading_corner[0],  leading_corner[1])
+		draw_vertex(trailing_corner[0], leading_corner[1])
+		draw_vertex(trailing_corner[0], trailing_corner[1])
+		draw_primitive_end()
+		draw_set_alpha(1.0)
+		
+		draw_primitive_begin(pr_trianglefan)
+		draw_set_color(c_orange)
+		draw_set_alpha(0.5)
+		var juandeeg = 1/16
+		var juandeez = 1-juandeeg
+		draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeeg)
+		draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeeg)
+		draw_vertex(leading_indices[0]+juandeez, leading_indices[1]+juandeez)
+		draw_vertex(leading_indices[0]+juandeeg, leading_indices[1]+juandeez)
+		draw_primitive_end()
+		draw_set_alpha(1.0)
+		
+		draw_set_color(c_lime)
+		draw_set_alpha(0.5)
+		draw_arrow(
+			leading_corner[0]-1, leading_corner[1]-1,
+			leading_indices[0]-1+0.5, leading_indices[1]-1+0.5,
+			1/16
+		)
+		draw_set_alpha(1.)
+		
 		var stepx = step[Vec.x]
 		var stepy = step[Vec.y]
 
-		var x0 = i_axis == Vec.x ? leading_indices[Vec.x] : trailing_indices[Vec.x]
-		var y0 = i_axis == Vec.y ? leading_indices[Vec.y] : trailing_indices[Vec.y]
+		//var x0 = i_axis == Vec.x ? leading_indices[Vec.x] : trailing_indices[Vec.x]
+		//var y0 = i_axis == Vec.y ? leading_indices[Vec.y] : trailing_indices[Vec.y]
+
+		var x0, y0
+		if i_axis == Vec.x
+		{
+			x0 = leading_indices[Vec.x]
+			y0 = trailing_indices[Vec.y]
+		}
+		else if i_axis == Vec.y
+		{
+			x0 = trailing_indices[Vec.x]
+			y0 = leading_indices[Vec.y]
+		}
 
 		var x1 = leading_indices[Vec.x] + step[Vec.x]
 		var y1 = leading_indices[Vec.y] + step[Vec.y]
@@ -233,21 +286,11 @@ constructor begin
 			pev_y0 = y0
 		end
 		
-		//begin // "normalize" start & end
-		//	var temp
-		//	temp = x0
-		//	x0 = min(temp, x1)
-		//	x1 = max(temp, x1)
-		//	temp = y0
-		//	y0 = min(temp, y1)
-		//	y1 = max(temp, y1)
-		//end
-		
 		var yc, yy
-		for (var xx = x0; --xcount >= 0; xx+=stepx)//++)
+		for (var xx = x0; --xcount >= 0; xx+=stepx)
 		{
 			yc = ycount
-			for (yy = y0; --yc >= 0; yy+=stepy)//++)
+			for (yy = y0; --yc >= 0; yy+=stepy)
 			{
 				if callback_get_voxel(xx, yy)
 				{
@@ -267,7 +310,7 @@ constructor begin
 
 		// vector moved so far, and left to move
 		var done = time / time_max
-
+		
 		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			var dv = direction[i] * done

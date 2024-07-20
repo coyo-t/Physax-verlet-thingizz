@@ -25,8 +25,8 @@
   "nineSlice":null,
   "origin":0,
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"sprite",
+    "path":"folders/sprite.yy",
   },
   "preMultiplyAlpha":false,
   "resourceType":"GMSprite",

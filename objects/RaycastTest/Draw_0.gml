@@ -10,12 +10,6 @@ matrix_push(matrix_world)
 
 var cel_size = map.cel_size
 
-matrix_set(matrix_world, matrix_build(
-	map_x0,map_y0,0,
-	0,0,0,
-	(map_x1-map_x0)/map_wide, (map_y1-map_y0)/map_tall, 1
-))
-
 var marg = 1 / cel_size
 for (var yy = map_tall; --yy >= 0;)
 {
@@ -49,45 +43,106 @@ for (var yy = map_tall; --yy >= 0;)
 	}
 }
 
-draw_set_color(c_yellow)
-for (var i = ds_list_size(hit.points); --i >= 0; )
-{
-	var pt = hit.points[| i]
-	draw_circle(pt[Vec.x]-1, pt[Vec.y]-1, 0.05, false)
-}
+begin
+	
+	draw_set_alpha(0.5)
+	
+	var mw = map.wide
+	var mh = map.tall
+	
+	draw_primitive_begin(pr_linelist)
+	draw_set_color(c_black)
 
-for (var i = ds_list_size(hit.cels); --i >= 0; )
-{
-	var pt = hit.cels[| i]
-	var xx = pt[Vec.x]
-	var yy = pt[Vec.y]
-	var sz = 0.001
-	draw_primitive_begin(pr_linestrip)
-	draw_vertex(xx+sz, yy+sz)
-	draw_vertex(xx+1-sz, yy+sz)
-	draw_vertex(xx+1-sz, yy+1-sz)
-	draw_vertex(xx+sz, yy+1-sz)
-	draw_vertex(xx+sz, yy+sz)
+	for (var i = 0; i <= mw; i++)
+	{
+		draw_vertex(i, 0)
+		draw_vertex(i, mh)
+	}
 	draw_primitive_end()
-}
+	
+	draw_primitive_begin(pr_linelist)
+	draw_set_color(c_black)
+	for (var i = 0; i <= mh; i++)
+	{
+		draw_vertex(0, i)
+		draw_vertex(mw, i)
+	}
+	draw_primitive_end()
+	
+	draw_set_color(c_white)
+	draw_set_alpha(1)
+
+end
+
+hit.did = trace(trace_predicate)
 
 draw_set_color(c_yellow)
 draw_primitive_begin(pr_linelist)
 var rr = 0.25
-draw_vertex(ray.x0-rr, ray.y0-rr)
-draw_vertex(ray.x0+rr, ray.y0+rr)
-draw_vertex(ray.x0+rr, ray.y0-rr)
-draw_vertex(ray.x0-rr, ray.y0+rr)
+draw_vertex(ray.x0()-rr, ray.y0()-rr)
+draw_vertex(ray.x0()+rr, ray.y0()+rr)
+draw_vertex(ray.x0()+rr, ray.y0()-rr)
+draw_vertex(ray.x0()-rr, ray.y0()+rr)
 draw_primitive_end()
 
-draw_arrow(
-	ray.x0-1,
-	ray.y0-1,
-	ray.x0+(ray.get_dir_x()*hit.time)-1,
-	ray.y0+(ray.get_dir_y()*hit.time)-1,
-	0.25
-)
+begin
+	ray.draw_box()
+	ray.draw_box(ray.get_dir_x(), ray.get_dir_y())
+end
 
+
+if hit.did
+{
+	draw_set_color(c_green)
+	draw_set_alpha(0.5)
+	draw_primitive_begin(pr_trianglefan)
+	draw_vertex(rect_x0(hit.box), rect_y0(hit.box))
+	draw_vertex(rect_x1(hit.box), rect_y0(hit.box))
+	draw_vertex(rect_x1(hit.box), rect_y1(hit.box))
+	draw_vertex(rect_x0(hit.box), rect_y1(hit.box))
+	
+	draw_primitive_end()
+	draw_set_alpha(1)
+}
+
+
+begin
+	//draw_set_alpha(0.5)
+	draw_set_color(hit.did ? c_green : c_red)
+	draw_primitive_begin(pr_linelist)
+	
+	var rx0 = ray.x0()
+	var ry0 = ray.y0()
+	var rx1 = (ray.get_dir_x()*hit.time) + rx0
+	var ry1 = (ray.get_dir_y()*hit.time) + ry0
+	draw_vertex(rx0, ry0)
+	draw_vertex(rx1, ry1)
+	
+	if hit.did
+	{
+		draw_vertex(rx1, ry1)
+		draw_vertex(rx1+boxcast_context.normal_x, ry1+boxcast_context.normal_y)
+	}
+	
+	if mouse_check_button_pressed(mb_right)
+	{
+		ray.set_start(
+			ray.get_dir_x()*(hit.time-math_get_epsilon())+rx0,
+			ray.get_dir_y()*(hit.time-math_get_epsilon())+ry0
+		)
+	}
+	draw_set_alpha(1)
+	draw_primitive_end()
+	
+	if hit.did
+	{
+		draw_set_alpha(0.5)
+		ray.draw_box(rx1-rx0, ry1-ry0, true)
+	}
+	
+end
+
+draw_set_alpha(1)
 draw_set_color(c_white)
 
 matrix_pop(matrix_world)

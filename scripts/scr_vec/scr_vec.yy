@@ -6,7 +6,7 @@
   "name":"scr_vec",
   "parent":{
     "name":"maths",
-    "path":"folders/scripts/maths.yy",
+    "path":"folders/script/maths.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",
