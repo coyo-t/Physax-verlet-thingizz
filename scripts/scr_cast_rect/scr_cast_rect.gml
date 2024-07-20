@@ -72,8 +72,6 @@ function RayRectContext () constructor begin
 	{
 		did_hit = false
 		hit_time = 1
-		hit_normal_x = 0
-		hit_normal_y = 0
 
 		if _x0 <= origin_x and origin_x <= _x1 and _y0 <= origin_y and origin_y <= _y1
 		{
@@ -83,80 +81,47 @@ function RayRectContext () constructor begin
 		near_time = +infinity
 		far_time  = -infinity
 		
-		var nx = 0
-		var ny = 0
+		var hw = (_x1-_x0) * 0.5
+		var hh = (_y1-_y0) * 0.5
+		var cx = _x0 + hw
+		var cy = _y0 + hh
 		
-		// it is perhaps superfluous to do explicit horizontal/vertical checks
-		// however, i really dont feel like figuring out a good way to avoid
-		// this algorithm breaking down when one direction compoenent is 0 for now
-		// :/
-		//if direction_y == 0
-		//{
-		//	if _y0 <= origin_y and origin_y <= _y1
-		//	{
-		//		var n = direction_x < 0
-		//		nx = n * 2 - 1
-		//		var xx0 = _x0 - origin_x
-		//		var xx1 = _x1 - origin_x
-		//		near_time = ((n ? xx1 : xx0) - inflate_x*sign_x) * inv_direction_x
-		//		far_time  = ((n ? xx0 : xx1) + inflate_x*sign_x) * inv_direction_x
-		//	}
-		//}
-		//else if direction_x == 0
-		//{
-		//	if _x0 <= origin_x and origin_x <= _x1
-		//	{
-		//		var n = direction_y < 0
-		//		ny = n * 2 - 1
-		//		var yy0 = _y0 - origin_y
-		//		var yy1 = _y1 - origin_y
-		//		near_time = ((n ? yy1 : yy0) - inflate_y*sign_y) * inv_direction_y
-		//		far_time  = ((n ? yy0 : yy1) + inflate_y*sign_y) * inv_direction_y
-		//	}
-		//}
-		//else
+		var vfx = (hw + inflate_x) * sign_x
+		var vfy = (hh + inflate_y) * sign_y
+		
+		var near_time_x = (cx - vfx - origin_x) * inv_direction_x
+		var near_time_y = (cy - vfy - origin_y) * inv_direction_y
+		var far_time_x  = (cx + vfx - origin_x) * inv_direction_x
+		var far_time_y  = (cy + vfy - origin_y) * inv_direction_y
+		
+		if near_time_x > far_time_y or near_time_y > far_time_x
 		{
-			var hw = (_x1-_x0) * 0.5
-			var hh = (_y1-_y0) * 0.5
-			var cx = _x0 + hw
-			var cy = _y0 + hh
-		
-			var vfx = (hw + inflate_x) * sign_x
-			var vfy = (hh + inflate_y) * sign_y
-		
-			var near_time_x = (cx - vfx - origin_x) * inv_direction_x
-			var near_time_y = (cy - vfy - origin_y) * inv_direction_y
-			var far_time_x  = (cx + vfx - origin_x) * inv_direction_x
-			var far_time_y  = (cy + vfy - origin_y) * inv_direction_y
-		
-			if near_time_x > far_time_y or near_time_y > far_time_x
-			{
-				return false
-			}
-		
-			near_time = max(near_time_x, near_time_y)
-			far_time  = min(far_time_x, far_time_y)
-			
-			if near_time_x > near_time_y
-			{
-				nx = -sign_x
-			}
-			else
-			{
-				ny = -sign_y
-			}
+			return false
 		}
+		
+		near_time = max(near_time_x, near_time_y)
+		far_time  = min(far_time_x, far_time_y)
+		
 		
 		if near_time >= 1 or far_time <= 0
 		{
 			return false
 		}
 		
+		if near_time_x > near_time_y
+		{
+			hit_normal_x = -sign_x
+			hit_normal_y = 0
+		}
+		else
+		{
+			hit_normal_x = 0
+			hit_normal_y = -sign_y
+		}
+		
 		did_hit = true
 		hit_time = clamp(near_time, 0, 1)
 		
-		hit_normal_x = nx
-		hit_normal_y = ny
 		return true
 	}
 	

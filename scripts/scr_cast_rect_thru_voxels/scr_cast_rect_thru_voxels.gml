@@ -168,16 +168,35 @@ constructor begin
 		var stepx = step[0]
 		var x0 = (i_axis == 0) ? leading_indices[0] : trailing_indices[0]
 		var x1 = leading_indices[0] + stepx
-
 		var stepy = step[1]
 		var y0 = (i_axis == 1) ? leading_indices[1] : trailing_indices[1]
 		var y1 = leading_indices[1] + stepy
 		
-		for (var xx = x0; xx <> x1; xx += stepx)
+		draw_primitive_begin(pr_linestrip)
+		draw_vertex_colour(x0, y0, c_aqua, 0.5)
+		draw_vertex_colour(x1, y0, c_aqua, 0.5)
+		draw_vertex_colour(x1, y1, c_aqua, 0.5)
+		draw_vertex_colour(x0, y1, c_aqua, 0.5)
+		draw_vertex_colour(x0, y0, c_aqua, 0.5)
+		draw_primitive_end()
+		
+		var xcount = abs(x1-x0)
+		var ycount = abs(y1-y0)
+		for (var xx = x0; --xcount >= 0; xx += stepx)
 		{
-			for (var yy = y0; yy <> y1; yy += stepy)
+			var yc = ycount
+			for (var yy = y0; --yc >= 0; yy += stepy)
 			{
-				if callback_get_voxel(xx, yy)
+				draw_primitive_begin(pr_trianglefan)
+				var ch = ((xx^yy)&1) <> 0
+				var c = ch ? c_teal : c_aqua
+				var a = ch ? 0.5 : 0.1
+				draw_vertex_colour(xx, yy, c, a)
+				draw_vertex_colour(xx+1, yy, c, a)
+				draw_vertex_colour(xx+1, yy+1, c, a)
+				draw_vertex_colour(xx, yy+1, c, a)
+				draw_primitive_end()
+				if callback_get_voxel(xx, yy) or callback_get_voxel(xx, yy-1)
 				{
 					return true
 				}

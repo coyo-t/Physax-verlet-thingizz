@@ -130,7 +130,7 @@ function MapRenderer (_map/*Map*/) constructor begin
 				current_y = yy
 				var shapes = block.get_render_shapes()
 				var cbasecol = block.colour
-				current_colour = ((xx&1)^(yy&1)==0) ? cbasecol : merge_color(cbasecol, c_black, 0.1)
+				current_colour = (((xx^yy)&1)==0) ? cbasecol : merge_color(cbasecol, c_black, 0.1)
 				for (var i = array_length(shapes); i > 0;)
 				{
 					var shape = shapes[--i]

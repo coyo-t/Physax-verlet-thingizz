@@ -36,6 +36,7 @@
     {"id":{"name":"scr_cast_rect","path":"scripts/scr_cast_rect/scr_cast_rect.yy",},},
     {"id":{"name":"scr_debug_commands","path":"scripts/scr_debug_commands/scr_debug_commands.yy",},},
     {"id":{"name":"scr_draw","path":"scripts/scr_draw/scr_draw.yy",},},
+    {"id":{"name":"scr_font_stuff","path":"scripts/scr_font_stuff/scr_font_stuff.yy",},},
     {"id":{"name":"scr_map","path":"scripts/scr_map/scr_map.yy",},},
     {"id":{"name":"scr_matrix","path":"scripts/scr_matrix/scr_matrix.yy",},},
     {"id":{"name":"scr_misc_thingz","path":"scripts/scr_misc_thingz/scr_misc_thingz.yy",},},

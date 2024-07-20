@@ -3,6 +3,10 @@
 #macro MODE_EDIT    1
 #macro MODE_COMMAND 2
 
+#macro CHECK_CONTINUE 0
+#macro CHECK_ABORT 1
+#macro CHECK_REMAINING 2
+
 __DEBUG_STRING = ""
 
 
@@ -53,49 +57,45 @@ __hit_x = 0
 __hit_y = 0
 __hit_time = infinity
 __hit_box = rect_create(0,0,0,0)
-__did_init = false
+
+__closest_x = infinity
+__closest_y = infinity
+__hit_any = false
 ///@self
 var vc_getb = method(self, function (_x, _y) {
 
 	var bloc = map.get_block(_x, _y)
 	
-	if bloc.collideable()
-	{
-		if not __did_init
-		{
-			boxcast_ctx.setup_ray(
-				vec_get_temp(viewcast_x, viewcast_y),
-				vec_get_temp(viewcast_xdirection, viewcast_ydirection)
-			)
-			__did_init = true
-		}
-		__hit_time = infinity
-		__hit_x = _x
-		__hit_y = _y
-		var hw = rect_get_wide(viewcast_box) * 0.5
-		var hh = rect_get_tall(viewcast_box) * 0.5
-		var colliders = bloc.get_colliders(_x, _y)
-		for (var i = array_length(colliders); i > 0;)
-		{
-			var box = colliders[--i]
-			var ht = boxcast_ctx.test_simple(
-				rect_get_x0(box)-hw,
-				rect_get_y0(box)-hh,
-				rect_get_x1(box)+hw,
-				rect_get_y1(box)+hh
-			)
-			if ht < __hit_time
-			{
-				__hit_time = ht
-				rect_set_from(__hit_box, box)
-			}
-		}
-		return __hit_time < infinity
-	}
-	else
+	if not bloc.collideable()
 	{
 		return false
 	}
+	__hit_x = _x
+	__hit_y = _y
+	var hw = rect_get_wide(viewcast_box) * 0.5
+	var hh = rect_get_tall(viewcast_box) * 0.5
+	var colliders = bloc.get_colliders(_x, _y)
+	var timezor = infinity
+	for (var i = array_length(colliders); i > 0;)
+	{
+		var box = colliders[--i]
+		var ht = ray_box_ctx.test_rect(box)
+		if ht and ray_box_ctx.hit_time < __hit_time
+		{
+			timezor = ray_box_ctx.hit_time
+			
+			rect_set_from(__hit_box, box)
+		}
+	}
+	var any = timezor < infinity
+	if any
+	{
+		__hit_time = timezor
+		__hit_any = true
+		__closest_x = _x
+		__closest_y = _y
+	}
+	return any
 })
 
 var vc_onc = method(self, function (dist, axis, dir, remain)
@@ -110,8 +110,12 @@ var vc_onc = method(self, function (dist, axis, dir, remain)
 	//	vx[1]+remain[1]-1,
 	//	4/16
 	//)
-	remain[axis] = 0
-	return true
+	//remain[axis] = 0
+	//remain[0] = sign(remain[0])
+	//remain[1] = sign(remain[1])
+	return false
+	
+	//return true//remain[0] == 0 and remain[1] == 0
 })
 
 viewcaster = new RectVoxelSweeper(
