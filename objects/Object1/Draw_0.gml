@@ -53,8 +53,12 @@ begin
 		
 		viewcaster.set_box(viewcast_box)
 		vec_set_xy(viewcaster.direction, viewcast_xdirection, viewcast_ydirection)
-		//show_debug_message(viewcaster.sweep())
-		viewcaster.sweep()
+		
+		var trace_result = viewcaster.sweep()
+		__DEBUG_STRING = string_join("\n",
+			$"{power(trace_result, 2)}",
+			$"{power(viewcast_xdirection, 2)+power(viewcast_ydirection,2)}",
+		) 
 		
 		draw_primitive_begin(pr_linelist)
 		draw_vertex(viewcast_x, viewcast_y)
@@ -64,33 +68,10 @@ begin
 
 		
 		begin
-			//var vx0 = viewcaster.box_min[0]
-			//var vy0 = viewcaster.box_min[1]
-			//var vx1 = viewcaster.box_max[0]
-			//var vy1 = viewcaster.box_max[1]
-			
-			var ob = viewcaster.box_original
-			var vx0 = rect_get_x0(ob)
-			var vy0 = rect_get_y0(ob)
-			var vx1 = rect_get_x1(ob)
-			var vy1 = rect_get_y1(ob)
-			var ddx = viewcaster.direction[0] > 0
-				? viewcaster.box_max[0] - rect_get_x1(ob) 
-				: viewcaster.box_min[0] - rect_get_x0(ob)
-			
-			var ddy = viewcaster.direction[1] > 0
-				? viewcaster.box_max[1] - rect_get_y1(ob)
-				: viewcaster.box_min[1] - rect_get_y0(ob)
-			
-			vx0 += ddx
-			vy0 += ddy
-			vx1 += ddx
-			vy1 += ddy
-			//	for (var i = 0; i < 2; i++)
-			//	{
-			//		result[i] = (direction[i] > 0) ? maxx[i] - box.max[i] : base[i] - box.base[i]
-			//	}
-			//	box.translate(result)
+			var vx0 = viewcaster.box_min[0]
+			var vy0 = viewcaster.box_min[1]
+			var vx1 = viewcaster.box_max[0]
+			var vy1 = viewcaster.box_max[1]
 			
 			draw_set_color(c_white)
 			draw_primitive_begin(pr_linestrip)
@@ -100,18 +81,6 @@ begin
 			draw_vertex(vx0, vy1)
 			draw_vertex(vx0, vy0)
 			draw_primitive_end()
-			
-			//vx0 += viewcast_xdirection
-			//vy0 += viewcast_ydirection
-			//vx1 += viewcast_xdirection
-			//vy1 += viewcast_ydirection
-			//draw_primitive_begin(pr_linestrip)
-			//draw_vertex(vx0, vy0)
-			//draw_vertex(vx1, vy0)
-			//draw_vertex(vx1, vy1)
-			//draw_vertex(vx0, vy1)
-			//draw_vertex(vx0, vy0)
-			//draw_primitive_end()
 		end
 		
 		matrix_set(matrix_world, matrix_build(
@@ -131,13 +100,17 @@ begin
 		draw_primitive_end()
 		xx = lerp(player_xprevious, player_x, tfac)
 		yy = lerp(player_yprevious, player_y, tfac)
-		matrix_set(matrix_world, matrix_build(
+
+		matrix_stack_push(matrix_build(
 			xx,
 			yy,
 			0,
 			0,0,0,
 			1,1,1
 		))
+		
+		matrix_set(matrix_world, matrix_stack_top())
+		matrix_stack_clear()
 		draw_primitive_begin(pr_linestrip)
 		draw_set_color(c_white)
 		var abx0 = rect_get_x0(player_box_absolute)

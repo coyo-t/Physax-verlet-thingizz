@@ -143,34 +143,42 @@ function rect_moved (_self/*:Rect*/, _x/*:number*/, _y/*:number*/) /*-> Rect*/
 
 function rect_clip_x_collide (_self/*:Rect*/, c/*:Rect*/, xa/*:number*/) /*-> number*/
 {
-	if c[Rect.y1] <= _self[Rect.y0] or c[Rect.y0] >= _self[Rect.y1]
+	var y0 = _self[Rect.y0]
+	var y1 = _self[Rect.y1]
+	if y0 <= -infinity or y1 >= +infinity or c[Rect.y1] <= y0 or c[Rect.y0] >= y1
 	{
 		return xa
 	}
-	if xa > 0 and c[Rect.x1] <= _self[Rect.x0]
+	var x0 = min(_self[Rect.x0], _self[Rect.x1])
+	var x1 = max(_self[Rect.x0], _self[Rect.x1])
+	if xa > 0 and x0 > -infinity and c[Rect.x1] <= x0
 	{
-		xa = min(xa, _self[Rect.x0] - c[Rect.x1])
+		xa = min(xa, x0 - c[Rect.x1])
 	}
-	if xa < 0 and c[Rect.x0] >= _self[Rect.x1]
+	if xa < 0 and x1 < infinity and c[Rect.x0] >= x1
 	{
-		xa = max(xa, _self[Rect.x1] - c[Rect.x0])
+		xa = max(xa, x1 - c[Rect.x0])
 	}
 	return xa
 }
 
 function rect_clip_y_collide (_self/*:Rect*/, c/*:Rect*/, ya/*:number*/) /*-> number*/
 {
-	if c[Rect.x1] <= _self[Rect.x0] or c[Rect.x0] >= _self[Rect.x1]
+	var x0 = _self[Rect.x0]
+	var x1 = _self[Rect.x1]
+	if x0 <= -infinity or x1 >= +infinity or c[Rect.x1] <= x0 or c[Rect.x0] >= x1
 	{
 		return ya
 	}
-	if ya > 0 and c[Rect.y1] <= _self[Rect.y0]
+	var y0 = min(_self[Rect.y0], _self[Rect.y1])
+	var y1 = max(_self[Rect.y0], _self[Rect.y1])
+	if ya > 0 and y0 > -infinity and c[Rect.y1] <= y0
 	{
-		ya = min(ya, _self[Rect.y0] - c[Rect.y1])
+		ya = min(ya, y0 - c[Rect.y1])
 	}
-	if ya < 0 and c[Rect.y0] >= _self[Rect.y1]
+	if ya < 0 and y1 < infinity and c[Rect.y0] >= y1
 	{
-		ya = max(ya, _self[Rect.y1] - c[Rect.y0])
+		ya = max(ya, y1 - c[Rect.y0])
 	}
 	return ya
 }

@@ -121,4 +121,20 @@ function StairBlock (_facing) : Block() constructor begin
 	}
 end
 
+function EndlessBlock (_direction) : Block() constructor begin
+	
+	if _direction > 0
+	{
+		rect_set_corners(shape, 0, -infinity, 1, 1)
+	}
+	else if _direction < 0
+	{
+		rect_set_corners(shape, 0, 0, 1, +infinity)
+	}
+	
+	static get_render_shapes = function () /*-> array<Rect>*/
+	{
+		return [ rect_create(0,0,1,1) ]
+	}
+end
 

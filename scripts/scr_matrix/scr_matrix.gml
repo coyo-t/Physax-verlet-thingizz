@@ -1,4 +1,25 @@
 
+function matrix_build_offset (x, y, z, w=1.0)
+{
+	return [
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		x,y,z,w
+	]
+}
+
+function matrix_build_scale (x, y, z, w=1.0)
+{
+	return [
+		x,0,0,0,
+		0,y,0,0,
+		0,0,z,0,
+		0,0,0,w
+	]
+}
+
+
 ///@arg x
 ///@arg y
 ///@arg z

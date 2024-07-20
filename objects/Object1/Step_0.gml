@@ -1,3 +1,4 @@
+__DEBUG_STRING = ""
 
 var mdelta = mouse_wheel_down() - mouse_wheel_up()
 
@@ -19,6 +20,11 @@ if mdelta <> 0
 	{
 		cam.set_zoom(cam.zoom * exp(mdelta * (1/16)))
 	}
+}
+
+if keyboard_check_pressed(vk_f3)
+{
+	show_debug_overlay(!is_debug_overlay_open(), true)
 }
 
 if mouse_check_button(mb_middle)
@@ -115,4 +121,8 @@ if ticks <> 0
 	wish_xdirection = 0
 	wish_ydirection = 0
 }
+
+paint_changed = current_paint <> previous_paint
+previous_paint = current_paint
+
 

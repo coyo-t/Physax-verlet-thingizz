@@ -5,11 +5,18 @@
 #macro MODE_EDIT    1
 #macro MODE_COMMAND 2
 
+__DEBUG_STRING = ""
+
+
 step_sounds_generic = get_sound_set("pl_step_generic") ///@is{array<sound>}
 
 tick = method(self, function() /*=>*/ {
 	player_xprevious = player_x
 	player_yprevious = player_y
+	player_previous_bob = player_bob
+	walk_dist_previous = walk_dist
+	player_previous_tilt = player_tilt
+	player_previous_fall_hurt_time = player_fall_hurt_time
 	rect_set_from(player_previous_box, player_box)
 	tick_player()
 })
@@ -81,9 +88,54 @@ viewcaster = new RectVoxelSweeper(
 	vc_onc
 )
 
+#region palette
+
 palette = array_filter(global.blocks_all, function(bloc) /*=>*/ {return bloc.show_in_palette()}) ///@is{array<Block>}
 
 current_paint = 0 ///@is{int}
+previous_paint = -1
+paint_changed = true
+vertex_format_begin()
+vertex_format_add_position_3d()
+vertex_format_add_color()
+palette_vb_format = vertex_format_end()
+
+palette_vb = vertex_create_buffer()
+
+function palette_vertex (_x, _y, _z, _c)
+{
+	vertex_position_3d(palette_vb, _x, _y, _z)
+	vertex_color(palette_vb, _c, 1)
+}
+
+function palette_get_current ()/*-> Block*/
+{
+	return palette[current_paint]
+}
+
+begin
+	var skew = [
+		1, -0.5,   0, 0,
+		1, +0.5,   0, 0,
+		0,    1, 0.1, 0,
+		0,    0,   0, 1
+	]
+	skew = [
+		1,0,0,0,
+		0,-1,0,0,
+		-1,1,-1,0,
+		0,0,0,1
+	]
+	var ofs = matrix_build_offset(-0.5, -0.5, -0.5)
+	
+	paint_matrix = matrix_multiply(ofs, skew)
+	
+	//paint_matrix = ofs
+	matrix_stack_clear()
+
+end
+
+#endregion
 
 player_x = 0 ///@is{number}
 player_y = 0 ///@is{number}
@@ -100,6 +152,13 @@ player_previous_box = rect_create(0,0,0,0) ///@is{Rect}
 
 player_eyeline = player_tall - 0.2
 
+player_bob = 0
+player_previous_bob = 0
+player_tilt = 0
+player_previous_tilt = 0
+
+player_jump_coyote_time_max = 20 * (1/20)
+player_jump_coyote_time = player_jump_coyote_time_max
 allow_jump_refire = 0
 
 slide = true
@@ -107,12 +166,15 @@ slide = true
 wish_xdirection = 0
 wish_ydirection = 0
 
+player_fall_hurt_time = 0
+player_previous_fall_hurt_time = 0
 on_ground = false
 horizontal_collision = false
 collision = false
 height_offset = 0
 y_slide_offset = 0
 walk_dist = 0
+walk_dist_previous = 0
 speed_x = 0
 speed_y = 0
 fall_distance = 0
@@ -284,6 +346,7 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 				if ff > 0
 				{
 					audio_play_sound_at(pl_fallpain3, player_x, player_y, 0, 8, 16, 1, false, 1)
+					player_fall_hurt_time = ceil(min(ff*0.25, timer.get_tps() * 4))
 				}
 				audio_play_sound_at(pl_jumpland2, player_x, player_y, 0, 8, 16, 1, false, 1)
 			}
@@ -341,13 +404,27 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 previous_wish_ydirection = 0
 function tick_player ()
 {
+	if player_fall_hurt_time > 0
+	{
+		player_fall_hurt_time -= 0.1
+	}
+	
 	var do_refire_check = wish_ydirection == previous_wish_ydirection
 	if not do_refire_check
 	{
 		allow_jump_refire = 0
 	}
+	if on_ground
+	{
+		player_jump_coyote_time = floor(player_jump_coyote_time_max * timer.get_tps())
+	}
+	else
+	{
+		--player_jump_coyote_time
+	}
+	show_debug_message(player_jump_coyote_time)
 	previous_wish_ydirection = wish_ydirection
-	if on_ground and (--allow_jump_refire <= 0) and wish_ydirection <> 0 
+	if (on_ground or player_jump_coyote_time > 0) and wish_ydirection <> 0
 	{
 		speed_y = 0.42
 		audio_play_sound_at(pl_jump2, player_x, player_y, 0, 8, 16, 1, false, 1)
@@ -367,5 +444,15 @@ function tick_player ()
 	{
 		speed_x *= 0.6
 	}
+	
+	var hmoment = min(speed_x, 0.1)
+	var fallangle = 0
+	if not on_ground
+	{
+		hmoment = 0
+		fallangle = arctan(-speed_y * 0.2) * 15
+	}
+	player_bob += (hmoment-player_bob) * 0.4
+	player_tilt += (fallangle-player_tilt) * 0.8
 }
 

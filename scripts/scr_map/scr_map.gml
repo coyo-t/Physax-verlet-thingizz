@@ -1,6 +1,3 @@
-// #import array.* in Array
-// #import ds_grid.* in DsGrid
-// #import rect.* in Rect
 
 vertex_format_begin()
 vertex_format_add_position_3d()
@@ -15,12 +12,12 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 	dirty = true; ///@is{bool}
 	vb = vertex_create_buffer(); ///@is{vertex_buffer}
 	
-	static fill_region = function (_x0/*:int*/, _y0/*:int*/, _x1/*:int*/, _y1/*:int*/, _type/*:Block*/)
+	static fill_region = function (_x0/*:Int*/, _y0/*:Int*/, _x1/*:Int*/, _y1/*:Int*/, _type/*:Block*/)
 	{
 		ds_grid_set_region(blocks, _x0, _y0, _x1-1, _y1-1, _type.runtime_id)
 	}
 
-	static set_block = function (_x/*:int*/, _y/*:int*/, _type/*: Block*/) /*-> bool*/
+	static set_block = function (_x/*:Int*/, _y/*:Int*/, _type/*:Block*/) /*-> Boolean*/
 	{
 		if not point_in_bounds(_x, _y)
 		{
@@ -36,7 +33,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		return true
 	}
 
-	static get_out_of_bounds_type = function (_x/*:int*/, _y/*:int*/) /*-> Block*/
+	static get_out_of_bounds_type = function (_x/*:Int*/, _y/*:Int*/) /*-> Block*/
 	{
 		if _y < 0
 		{
@@ -48,7 +45,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		}
 	}
 
-	static get_block = function (_x/*:int*/, _y/*:int*/) /*-> Block*/
+	static get_block = function (_x/*:Int*/, _y/*:Int*/) /*-> Block*/
 	{
 		if _x < 0 or _x >= wide or _y < 0 or _y >= tall
 		{
@@ -113,7 +110,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		vertex_submit(vb, pr_trianglelist, -1)
 	}
 	
-	static get_colliders = function (box/*:Rect*/) /*-> array<Rect>*/
+	static get_colliders = function (box/*:Rect*/) /*-> Array<Rect>*/
 	{
 		static TEMP = rect_create(0,0,0,0)
 
@@ -149,7 +146,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		return outs
 	}
 	
-	static point_in_bounds = function (_x/*:number*/, _y/*:number*/) /*-> bool*/
+	static point_in_bounds = function (_x/*:Number*/, _y/*:Number*/) /*-> Boolean*/
 	{
 		return 0 <= _x and _x < wide and 0 <= _y and _y < tall
 	}

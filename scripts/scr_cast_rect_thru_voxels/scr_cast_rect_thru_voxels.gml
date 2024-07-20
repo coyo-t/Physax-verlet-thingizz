@@ -1,5 +1,4 @@
 
-//!#import vec.* in Vec
 
 // https://github.com/fenomas/voxel-aabb-sweep/blob/master/index.js
 // consider algo as a raycast along the AABB's leading corner
@@ -50,6 +49,18 @@ constructor begin
 	
 	axis/*:Int*/ = 0
 	
+	hard_time_limit/*:Number*/ = infinity
+	
+	static set_hard_time_limit = function (_v/*:Number*/)
+	{
+		set_hard_time_limit_sqr(_v*_v)
+	}
+	
+	static set_hard_time_limit_sqr = function (_v/*:Number*/)
+	{
+		hard_time_limit = _v
+	}
+	
 	static set_box = function (_box/*:Rect*/)
 	{
 		rect_set_from(box_original, _box)
@@ -76,24 +87,9 @@ constructor begin
 
 		// loop along raycast vector
 		draw_set_color(c_orange)
-		var FUCK = 200
-		while time <= time_max and (--FUCK >= 0)
+
+		while time <= time_max
 		{
-			//rect_set_corners(DEBUG_RECT, box_min[0], box_min[1], box_max[0], box_max[1])
-			//rect_draw(DEBUG_RECT)
-			begin
-				var x0 = leading_indices[0]
-				var y0 = leading_indices[1]
-				var x1 = trailing_indices[0]
-				var y1 = trailing_indices[1]
-				draw_primitive_begin(pr_linestrip)
-				draw_vertex(x0, y0)
-				draw_vertex(x1, y0)
-				draw_vertex(x1, y1)
-				draw_vertex(x0, y1)
-				draw_vertex(x0, y0)
-				draw_primitive_end()
-			end
 			// sweeps over leading face of AABB
 			if check_collide(axis)
 			{
@@ -121,7 +117,7 @@ constructor begin
 		// parametrization t along raycast
 		time = 0.0
 		
-		time_max = vec_sqr_length(direction)
+		time_max = min(hard_time_limit, vec_sqr_length(direction))
 		if time_max <= 0
 		{
 			return
@@ -176,13 +172,9 @@ constructor begin
 		var y0 = (i_axis == 1) ? leading_indices[1] : trailing_indices[1]
 		var y1 = leading_indices[1] + stepy
 		
-		//draw_rectangle(x0, y0, x1-1, y1-1, true)
-		
-		var FUCK_X = 200
-		for (var xx = x0; xx <> x1 and (--FUCK_X >= 0); xx += stepx)
+		for (var xx = x0; xx <> x1; xx += stepx)
 		{
-			var FUCK_Y = 200
-			for (var yy = y0; yy <> y1 and (--FUCK_Y >= 0); yy += stepy)
+			for (var yy = y0; yy <> y1; yy += stepy)
 			{
 				if callback_get_voxel(xx, yy)
 				{
@@ -214,7 +206,7 @@ constructor begin
 
 		// set leading edge of stepped axis exactly to voxel boundary
 		// else we'll sometimes rounding error beyond it
-		if (dir > 0)
+		if dir > 0
 		{
 			box_max[axis] = floor(box_max[axis] + 0.5)
 		}
@@ -227,7 +219,7 @@ constructor begin
 		var res = callback_on_collision(time_accumulator, axis, dir, remaining)
 
 		// bail out out on truthy response
-		if (res)
+		if res
 		{
 			return true
 		}
@@ -236,7 +228,7 @@ constructor begin
 		
 		vec_set_from(direction, remaining)
 		init_sweep()
-		return time_max == 0
+		return time_max <= 0
 	}
 	
 	static leading_edge_to_int = function(coord/*:Number*/, step/*:Int*/) /*-> Int*/

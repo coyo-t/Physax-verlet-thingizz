@@ -50,3 +50,10 @@ global.left_stair.colour = c_aqua
 
 global.right_stair = blocks_register("right_stairs", new StairBlock(+1)) ///@is {StairBlock}
 global.right_stair.colour = c_teal
+
+global.endless_down = blocks_register("top_platform", new EndlessBlock(+1))
+global.endless_down.colour = c_red
+
+
+global.endless_up = blocks_register("bottom_platform", new EndlessBlock(-1))
+global.endless_up.colour = c_maroon
