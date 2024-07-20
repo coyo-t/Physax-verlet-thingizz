@@ -22,6 +22,10 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 
 	static set_block = function (_x/*:int*/, _y/*:int*/, _type/*: Block*/) /*-> bool*/
 	{
+		if not point_in_bounds(_x, _y)
+		{
+			return false
+		}
 		var cur = get_block(_x, _y)
 		if cur == _type
 		{

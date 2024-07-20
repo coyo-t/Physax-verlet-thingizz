@@ -34,8 +34,52 @@ m_view = matrix_build_identity()
 m_proj = matrix_build_identity()
 m_inv_proj_view = matrix_build_identity()
 
+world_mouse_x = 0
+world_mouse_y = 0
 cursor_x = 0
 cursor_y = 0
+
+viewcast_x = 0
+viewcast_y = 0
+viewcast_xdirection = 0
+viewcast_ydirection = 0
+viewcast_box_absolute = rect_create(-0.5, -0.5, 0.5, 0.5)
+viewcast_box = rect_copy(viewcast_box_absolute)
+
+__hit_x = 0
+__hit_y = 0
+var vc_getb = method(self, function (_x, _y) {
+	var bloc = map.get_block(_x, _y)
+	var collide = bloc.collideable()
+	if collide
+	{
+		__hit_x = _x
+		__hit_y = _y
+	}
+	return collide
+})
+
+var vc_onc = method(self, function (dist, axis, dir, remain)
+{
+	//show_debug_message($"dist: {dist}\naxis: {axis}\ndirection: {dir}\nremaining: {remain}")
+	draw_rectangle_size(__hit_x, __hit_y, 1, 1, true)
+	//draw_arrow(
+	//	viewcast_x-1,
+	//	viewcast_y-1,
+	//	viewcast_x+remain[0]-1,
+	//	viewcast_y*remain[1]-1,
+	//	4/16
+	//)
+	remain[axis] = 0
+	return true
+})
+
+viewcaster = new RectVoxelSweeper(
+	viewcast_box,
+	vec_create(),
+	vc_getb,
+	vc_onc
+)
 
 palette = array_filter(global.blocks_all, function(bloc) /*=>*/ {return bloc.show_in_palette()}) ///@is{array<Block>}
 
@@ -112,6 +156,8 @@ function sync_player_co_with_box ()
 
 //update_player_co(map.wide * 0.5, map.tall)
 update_player_co(map.wide * 0.5, 1.5, true)
+
+rect_set_from(viewcast_box_absolute, player_box_absolute)
 
 function move (xDirection/*:number*/, yDirection/*:number*/)
 {

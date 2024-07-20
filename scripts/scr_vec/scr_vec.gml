@@ -64,7 +64,7 @@ function vec_sqr_length (_self/*:Vec*/) /*-> number*/
 {
 	var xx = _self[Vec.x]
 	var yy = _self[Vec.y]
-	return dot_product(xx,yy,xx,yy)
+	return xx*xx+yy*yy
 }
 
 function vec_add_xy (_self/*:Vec*/, _x/*:number*/, _y/*:number*/) /*-> Vec*/

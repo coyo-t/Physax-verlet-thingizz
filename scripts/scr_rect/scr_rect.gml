@@ -174,3 +174,18 @@ function rect_clip_y_collide (_self/*:Rect*/, c/*:Rect*/, ya/*:number*/) /*-> nu
 	}
 	return ya
 }
+
+function rect_draw (_self/*:Rect*/)
+{
+	var x0 = _self[0]
+	var y0 = _self[1]
+	var x1 = _self[2]
+	var y1 = _self[3]
+	draw_primitive_begin(pr_linestrip)
+	draw_vertex(x0, y0)
+	draw_vertex(x1, y0)
+	draw_vertex(x1, y1)
+	draw_vertex(x0, y1)
+	draw_vertex(x0, y0)
+	draw_primitive_end()
+}

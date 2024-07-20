@@ -46,8 +46,9 @@ begin
 
 	mx = mx * (zoom*0.5) * cam.aspect + cam.x
 	my = my * (zoom*0.5) + cam.y
-
-	//update_player_co(mx, my)
+	
+	world_mouse_x = mx
+	world_mouse_y = my
 	
 	var omx = cursor_x
 	var omy = cursor_y
@@ -93,16 +94,12 @@ else if mouse_check_button(mb_right)
 begin
 	var hinp = keyboard_check(ord("D"))-keyboard_check(ord("A"))
 	var vinp = keyboard_check(ord("W"))-keyboard_check(ord("S"))
-	var dt = delta_time / 1000000
 	var spd = 5
 	
 	wish_xdirection = (wish_xdirection + hinp) * 0.5
 	//wish_xdirection = hinp
 	wish_ydirection |= keyboard_check(vk_space)
 	
-	//speed_x = hinp*spd
-	//speed_y = vinp*spd
-	//move(hinp*dt*spd, vinp*dt*spd)
 end
 
 var ticks = timer.step()
