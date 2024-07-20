@@ -86,8 +86,6 @@ constructor begin
 		axis = advance_step()
 
 		// loop along raycast vector
-		//draw_set_color(c_orange)
-
 		while time <= time_max
 		{
 			// sweeps over leading face of AABB

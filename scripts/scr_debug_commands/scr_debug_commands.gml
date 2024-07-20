@@ -6,7 +6,7 @@ function host_timescale (_value)
 	}
 	try
 	{
-		with Object1
+		with Game
 		{
 			var ot = timer.time_scale
 			timer.time_scale = max(_value, 0)

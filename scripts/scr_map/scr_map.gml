@@ -2,7 +2,184 @@
 vertex_format_begin()
 vertex_format_add_position_3d()
 vertex_format_add_color()
-global.__CHUNK_VERTEX_FORMAT = vertex_format_end() ///@is{vertex_format}
+global.__CHUNK_VERTEX_FORMAT = vertex_format_end()
+
+#macro CHUNK_LAYER_DIRTY (0b01)
+#macro CHUNK_LAYER_EMPTY (0b10)
+
+function ChunkLayer () constructor begin
+	flags = CHUNK_LAYER_DIRTY
+	vb = vertex_create_buffer()
+	
+	static mark_dirty = function ()
+	{
+		flags |= CHUNK_LAYER_DIRTY
+	}
+	
+	static is_dirty = function ()
+	{
+		return (flags & CHUNK_LAYER_DIRTY) <> 0
+	}
+	
+	static mark_empty_if_dirty = function ()
+	{
+		flags |= CHUNK_LAYER_EMPTY * is_dirty()
+	}
+	
+	static submit = function (_texture=-1)
+	{
+		if (flags & CHUNK_LAYER_EMPTY) == 0
+		{
+			vertex_submit(vb, pr_trianglelist, _texture)
+		}
+	}
+	
+	static vb_begin = function ()
+	{
+		vertex_begin(vb, global.__CHUNK_VERTEX_FORMAT)
+	}
+	
+	static vb_end = function ()
+	{
+		vertex_end(vb)
+	}
+end
+
+function MapRenderer (_map/*:Map*/) constructor begin
+	
+	map = _map
+	
+	
+	var lc = BlockRenderLayerIndex.SIZEOF
+	var cb = function () {
+		var outs = new ChunkLayer()
+		outs.flags = CHUNK_LAYER_DIRTY
+		return outs
+	}
+	layers = array_create_ext(lc, cb)
+	
+	dirty = true
+	
+	current_colour/*:Colour*/ = c_white
+	current_alpha/*:Number*/ = 1.0
+	current_layer/*:VertexBuffer*/ = -1
+
+	
+	current_x/*:Number*/ = 0
+	current_y/*:Number*/ = 0
+	current_z/*:Number*/ = 0
+	
+	static block_changed = function (_x/*:Int*/, _y/*:Int*/, _from/*:Block*/, _to/*:Block*/)
+	{
+		layers[_from.render_layer_index].mark_dirty()
+		layers[_to.render_layer_index].mark_dirty()
+		dirty = true
+	}
+	
+	static draw = function ()
+	{
+		rebuild()
+
+		for (var i =  array_length(layers); i > 0;)
+		{
+			layers[--i].submit()
+		}
+	}
+	
+	static rebuild = function ()
+	{
+		if not dirty
+		{
+			return
+		}
+		
+		var lc = array_length(layers)
+		for (var i = lc; i > 0;)
+		{
+			layers[--i].mark_empty_if_dirty()
+		}
+		
+		current_colour = c_white
+		current_alpha  = 1.0
+		current_depth  = 0
+		var wide = map.wide
+		var tall = map.tall
+		
+		for (var yy = 0; yy < tall; yy++)
+		{
+			for (var xx = 0; xx < wide; xx++)
+			{
+				var block = map.fastget_block(xx, yy)
+				if not block.drawable()
+				{
+					continue
+				}
+				var li = block.render_layer_index
+				var l = layers[li]
+				if (l.flags & CHUNK_LAYER_DIRTY) == 0
+				{
+					continue
+				}
+				
+				current_layer = l.vb
+				if (l.flags & CHUNK_LAYER_EMPTY) <> 0
+				{
+					l.flags ^= CHUNK_LAYER_EMPTY
+					l.vb_begin()
+				}
+				
+				current_x = xx
+				current_y = yy
+				var shapes = block.get_render_shapes()
+				var cbasecol = block.colour
+				current_colour = ((xx&1)^(yy&1)==0) ? cbasecol : merge_color(cbasecol, c_black, 0.1)
+				for (var i = array_length(shapes); i > 0;)
+				{
+					var shape = shapes[--i]
+					quad(shape)
+				}
+			}
+		}
+		for (var i = lc; i > 0;)
+		{
+			var l = layers[--i]
+			// if dirty and not empty
+			if (l.flags & (CHUNK_LAYER_EMPTY | CHUNK_LAYER_DIRTY)) == CHUNK_LAYER_DIRTY
+			{
+				l.vb_end()
+				l.flags ^= CHUNK_LAYER_DIRTY
+			}
+		}
+		dirty = false
+	}
+	
+	static get_layer_flag = function (_layer/*:Int*/, _flag)/*->Boolean*/
+	{
+		return (layer_flags[_layer] & _flag) <> 0
+	}
+	
+	static quad = function (shape/*:Rect*/)
+	{
+		var x0 = current_x+rect_get_x0(shape)
+		var y0 = current_y+rect_get_y0(shape)
+		var x1 = current_x+rect_get_x1(shape)
+		var y1 = current_y+rect_get_y1(shape)
+		vertex(x0, y0)
+		vertex(x1, y0)
+		vertex(x0, y1)
+		
+		vertex(x1, y0)
+		vertex(x1, y1)
+		vertex(x0, y1)
+	}
+	
+	static vertex = function (_x, _y)
+	{
+		vertex_position_3d(current_layer, _x, _y, current_z)
+		vertex_color(current_layer, current_colour, current_alpha)
+	}
+	
+end
 
 /*typealias BlockAreaPredicate = (_block:Block, _shape:Rect, _x:Int, _y:Int) -> Boolean*/
 
@@ -11,9 +188,9 @@ function Map (_wide/*:Int*/, _tall/*:Int*/) constructor begin
 	wide/*:Int*/ = _wide;
 	tall/*:Int*/ = _tall;
 	blocks/*:Grid<Int>*/ = ds_grid_create(_wide, _tall);
-	dirty = true;
-	vb/*:VertexBuffer*/ = vertex_create_buffer(); ///@is{vertex_buffer}
 	__temp_colliders/*:Array<Rect>*/ = []
+	
+	listener = undefined
 	
 	static fill_region = function (_x0/*:Int*/, _y0/*:Int*/, _x1/*:Int*/, _y1/*:Int*/, _type/*:Block*/)
 	{
@@ -32,7 +209,10 @@ function Map (_wide/*:Int*/, _tall/*:Int*/) constructor begin
 			return false
 		}
 		blocks[# _x, _y] = _type.runtime_id
-		dirty = true
+		if listener <> undefined
+		{
+			listener.block_changed(_x, _y, cur, _type)
+		}
 		return true
 	}
 
@@ -60,62 +240,6 @@ function Map (_wide/*:Int*/, _tall/*:Int*/) constructor begin
 			return get_out_of_bounds_type(_x, _y)
 		}
 		return fastget_block(_x, _y)
-	}
-
-	static rebuild = function ()
-	{
-		if not dirty
-		{
-			return
-		}
-		
-		vertex_begin(vb, global.__CHUNK_VERTEX_FORMAT)
-		for (var yy = 0; yy < tall; yy++)
-		{
-			for (var xx = 0; xx < wide; xx++)
-			{
-				var block = get_block(xx, yy)
-				if not block.drawable()
-				{
-					continue
-				}
-				var shapes = block.get_render_shapes()
-				var cbasecol = block.colour
-				var c = ((xx&1)^(yy&1)==0) ? cbasecol : merge_color(cbasecol, c_black, 0.1)
-				for (var i = array_length(shapes); i > 0;)
-				{
-					var shape = shapes[--i]
-					var x0 = xx+rect_get_x0(shape)
-					var y0 = yy+rect_get_y0(shape)
-					var x1 = xx+rect_get_x1(shape)
-					var y1 = yy+rect_get_y1(shape)
-					
-					vertex_position_3d(vb, x0, y0, 0)
-					vertex_color(vb, c, 1)
-					vertex_position_3d(vb, x1, y0, 0)
-					vertex_color(vb, c, 1)
-					vertex_position_3d(vb, x0, y1, 0)
-					vertex_color(vb, c, 1)
-	
-					vertex_position_3d(vb, x1, y0, 0)
-					vertex_color(vb, c, 1)
-					vertex_position_3d(vb, x1, y1, 0)
-					vertex_color(vb, c, 1)
-					vertex_position_3d(vb, x0, y1, 0)
-					vertex_color(vb, c, 1)
-				}
-			}
-		}
-		vertex_end(vb)
-		dirty = false
-	}
-
-
-	static draw = function ()
-	{
-		rebuild()
-		
-		vertex_submit(vb, pr_trianglelist, -1)
 	}
 	
 	static get_colliders = function (box/*:Rect*/, predicate=undefined) /*-> Array<Rect>*/

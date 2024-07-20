@@ -1,5 +1,11 @@
-//#import rect.* in Rect
 
+enum BlockRenderLayerIndex
+{
+	DEFAULT,
+	TRANSLUSCENT,
+	MANY_HULLS,
+	SIZEOF
+}
 
 function Block () constructor {
 	
@@ -14,6 +20,8 @@ function Block () constructor {
 	sound_type/*:BlockSoundType*/ = global.block_soundtypes.none
 	
 	ground_slipperiness/*:Number*/ = 0.6
+	
+	render_layer_index = 0
 	
 	static drawable = function () /*-> bool*/
 	{
@@ -168,12 +176,18 @@ end
 
 function ColliderCollectionBlock () : Block() constructor begin
 	shapes = []
+	render_layer_index = BlockRenderLayerIndex.MANY_HULLS
+	
+	static __add_collider = function (c)
+	{
+		array_push(shapes, c)
+	}
 	
 	static __add_colliders = function (/*...:Rect*/)
 	{
-		for (var i = argument_count; (--i) >= 0;)
+		for (var i = argument_count; i > 0;)
 		{
-			array_push(shapes, argument[i])
+			__add_collider(argument[--i])
 		}
 	}
 	
@@ -205,7 +219,7 @@ end
 
 
 function IceBlock () : Block() constructor begin
-	
+	render_layer_index = BlockRenderLayerIndex.TRANSLUSCENT
 	__set_friction(0.02)
 	
 end

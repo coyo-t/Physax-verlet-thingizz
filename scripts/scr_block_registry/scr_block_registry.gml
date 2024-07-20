@@ -7,7 +7,7 @@ global.block_soundtypes = {
 }
 
 global.blocks_all/*:Array<Block>*/ = []
-global.blocks_nametable/*:Map<Str, Block>*/ = {}
+global.blocks_nametable/*:Dict<Str, Block>*/ = {}
 
 /*generic(T=Block)*/
 function blocks_register (_name/*:Str*/, _block/*:T*/)/*->T*/
@@ -46,19 +46,19 @@ with global.dirt
 global.slab = blocks_register("slab", new SlabBlock())
 global.slab.colour = c_grey
 
-global.quarter_slab = blocks_register("slab", new SlabBlock(0.25))
+global.quarter_slab = blocks_register("quarter_slab", new SlabBlock(0.25))
 global.quarter_slab.colour = c_grey
 
 global.upper_slab = blocks_register("upper_slab", new SlabBlock(1, 0.5))
-global.quarter_slab.colour = c_ltgrey
+global.upper_slab.colour = c_ltgrey
 
-global.precarious = blocks_register("precarious", new FenceBlock()) ///@is {FenceBlock}
+global.precarious = blocks_register("precarious", new FenceBlock())
 global.precarious.colour = merge_color(c_orange, c_black, 0.4)
 
-global.left_stair = blocks_register("left_stairs", new StairBlock(-1)) ///@is {StairBlock}
+global.left_stair = blocks_register("left_stairs", new StairBlock(-1))
 global.left_stair.colour = c_aqua
 
-global.right_stair = blocks_register("right_stairs", new StairBlock(+1)) ///@is {StairBlock}
+global.right_stair = blocks_register("right_stairs", new StairBlock(+1))
 global.right_stair.colour = c_teal
 
 global.endless_down = blocks_register("top_platform", new EndlessBlock(+1))
@@ -92,6 +92,17 @@ with global.lego_studs
 		rect_create((16-4)/16, 0, (16-2)/16, 1/16)
 	)
 	
+}
+
+global.tiny_stairs = blocks_register("shit_ramp", new ColliderCollectionBlock())
+with global.tiny_stairs
+{
+	colour = c_lime
+
+	for (var i = 1; i <= 16; i++)
+	{
+		__add_collider(rect_create(0, 1-(i/16), i/16, 1-(i-1)/16))
+	}
 }
 
 global.ice = blocks_register("ice", new IceBlock())
