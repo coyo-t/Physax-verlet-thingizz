@@ -87,24 +87,24 @@ begin
 	vertex_submit(palette_vb, pr_trianglelist, -1)
 	//matrix_pop(matrix_world)
 	
-	draw_primitive_begin(pr_linelist)
-	var xx = 0.5
-	var yy = 0.5
-	var zz = 0.5
-	var sz = 2
-	gpu_set_depth(zz)
-	draw_set_color(c_red)
-	draw_vertex(xx, yy)
-	draw_vertex(xx+sz, yy)
-	draw_set_color(c_yellow)
-	draw_vertex(xx, yy)
-	draw_vertex(xx, yy+sz)
-	draw_set_color(c_aqua)
-	gpu_set_depth(zz)
-	draw_vertex(xx, yy)
-	gpu_set_depth(zz+sz)
-	draw_vertex(xx, yy)
-	draw_primitive_end()
+	//draw_primitive_begin(pr_linelist)
+	//var xx = 0.5
+	//var yy = 0.5
+	//var zz = 0.5
+	//var sz = 2
+	//gpu_set_depth(zz)
+	//draw_set_color(c_red)
+	//draw_vertex(xx, yy)
+	//draw_vertex(xx+sz, yy)
+	//draw_set_color(c_yellow)
+	//draw_vertex(xx, yy)
+	//draw_vertex(xx, yy+sz)
+	//draw_set_color(c_aqua)
+	//gpu_set_depth(zz)
+	//draw_vertex(xx, yy)
+	//gpu_set_depth(zz+sz)
+	//draw_vertex(xx, yy)
+	//draw_primitive_end()
 
 
 	

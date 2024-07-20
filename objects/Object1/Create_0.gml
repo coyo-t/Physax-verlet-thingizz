@@ -115,16 +115,16 @@ function palette_get_current ()/*-> Block*/
 }
 
 begin
+	//var skew = [
+	//	1, -0.5,   0, 0,
+	//	1, +0.5,   0, 0,
+	//	0,    1, 0.1, 0,
+	//	0,    0,   0, 1
+	//]
 	var skew = [
-		1, -0.5,   0, 0,
-		1, +0.5,   0, 0,
-		0,    1, 0.1, 0,
-		0,    0,   0, 1
-	]
-	skew = [
-		1,0,0,0,
+		1,.5,0,0,
 		0,-1,0,0,
-		-1,1,-1,0,
+		-1,.5,-1,0,
 		0,0,0,1
 	]
 	var ofs = matrix_build_offset(-0.5, -0.5, -0.5)
@@ -176,9 +176,12 @@ wish_xdirection = 0
 wish_ydirection = 0
 wish_sneak = false
 
+player_superjump_charge = 0
+player_superjump_ready = false
+
 player_fall_hurt_time = 0
 player_previous_fall_hurt_time = 0
-player_superjump_charge = 0
+
 on_ground = false
 horizontal_collision = false
 collision = false
@@ -458,6 +461,8 @@ function tick_player ()
 {
 	static temprect = rect_create(0,0,0,0)
 	
+	player_superjump_ready = false
+	
 	if player_fall_hurt_time > 0
 	{
 		player_fall_hurt_time -= 0.1
@@ -497,19 +502,19 @@ function tick_player ()
 		--player_jump_coyote_time
 	}
 
-	var superjump_ready = (player_superjump_charge - 8) > 0
+	player_superjump_ready = (player_superjump_charge - 8) > 0
 	if (on_ground or player_jump_coyote_time > 0) and wish_ydirection <> 0
 	{
 		var jpower = 0.42
 		var did_superjump = false
-		if superjump_ready and player_was_sneaking and not player_sneaking
+		if player_superjump_ready and player_was_sneaking and not player_sneaking
 		{
 			jpower *= 2
 			player_superjump_charge = 0
 			did_superjump = true
 		}
-		
-		if array_length(map.get_colliders(rect_expand(player_box, 0, jpower))) <= 0
+		//TODO:THIS
+		if true//array_length(map.get_colliders(rect_expand(player_box, 0, 0.01))) <= 0
 		{
 			speed_y = jpower
 			var sfx
@@ -517,7 +522,7 @@ function tick_player ()
 			if did_superjump
 			{
 				sfx = sfx_lav_fire
-				pitch = 0.9
+				pitch = 0.9 + random_range(-0.1, 0.1)
 			}
 			else if player_sneaking
 			{
