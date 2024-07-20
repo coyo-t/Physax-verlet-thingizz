@@ -1,0 +1,28 @@
+{
+  "$GMSound":"",
+  "%Name":"pl_grate1",
+  "audioGroupId":{
+    "name":"audiogroup_default",
+    "path":"audiogroups/audiogroup_default",
+  },
+  "bitDepth":1,
+  "bitRate":128,
+  "compression":0,
+  "conversionMode":0,
+  "duration":0.82195,
+  "name":"pl_grate1",
+  "parent":{
+    "name":"step",
+    "path":"folders/sound/block/step.yy",
+  },
+  "preload":false,
+  "resourceType":"GMSound",
+  "resourceVersion":"2.0",
+  "sampleRate":44100,
+  "soundFile":"pl_grate1.wav",
+  "tags":[
+    "pl_step_grate",
+  ],
+  "type":0,
+  "volume":1.0,
+}

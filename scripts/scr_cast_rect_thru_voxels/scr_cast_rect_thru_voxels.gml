@@ -8,9 +8,9 @@
 // original raycast implementation: https://github.com/fenomas/fast-voxel-raycast
 // original raycast paper: http://www.cse.chalmers.se/edu/year/2010/course/TDA361/grid.pdf
 
+
 /*typealias GetVoxelCallback = (x:Int, y:Int) -> Boolean*/
 /*typealias OnCollisionCallback = (distance:Number, axis:Int, direction:Vec, remaining:Vec) -> Boolean*/
-
 
 function RectVoxelSweeper (
 	box/*:Rect*/,
@@ -86,7 +86,7 @@ constructor begin
 		axis = advance_step()
 
 		// loop along raycast vector
-		draw_set_color(c_orange)
+		//draw_set_color(c_orange)
 
 		while time <= time_max
 		{

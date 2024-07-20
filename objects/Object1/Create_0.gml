@@ -176,9 +176,6 @@ wish_xdirection = 0
 wish_ydirection = 0
 wish_sneak = false
 
-player_superjump_charge = 0
-player_superjump_ready = false
-
 player_fall_hurt_time = 0
 player_previous_fall_hurt_time = 0
 
@@ -275,6 +272,14 @@ update_player_co(map.wide * 0.5, 1.5, true)
 rect_set_from(viewcast_box_absolute, player_box_absolute)
 
 ///@self
+function player_inside_climbable ()
+{
+	var xx = floor(player_x)
+	var yy = floor(rect_get_y0(player_box))
+	return map.get_block(xx, yy).is_climbable()
+}
+
+///@self
 function move (xDirection/*:number*/, yDirection/*:number*/)
 {
 	y_slide_offset *= 0.4
@@ -290,21 +295,22 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 	
 	rect_set_from(tempHitbox, player_box)
 	var broadPhase/*:Array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection));
-	
+	var br_length = array_length(broadPhase)
+	var hitGround
 	begin
 		// y axis
 		var box/*:Rect*/
-		for (var i = 0; i < array_length(broadPhase);)
+		for (var i = 0; i < br_length;)
 		{
 			box = broadPhase[i++]
 			yDirection = rect_clip_y_collide(box, player_box, yDirection)
 		}
 		rect_move(player_box, 0, yDirection)
 		
-		var hitGround = on_ground or (yDirection <> beginYD && beginYD < 0)
+		hitGround = on_ground or (yDirection <> beginYD && beginYD < 0)
 			
 		// x axis
-		for (var i = 0; i < array_length(broadPhase);)
+		for (var i = 0; i < br_length;)
 		{
 			box = broadPhase[i++]
 			xDirection = rect_clip_x_collide(box, player_box, xDirection)
@@ -433,21 +439,15 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 		if walk_dist > next_step and onWhat <> global.air
 		{
 			next_step++;
+			var st = onWhat.sound_type
 			//var a4 = onWhat.properties.soundType();
 			//if (!onWhat.getMaterial().isLiquid())
 			if true
 			{
-				audio_play_sound_at(
-					array_choose(step_sounds_generic),
-					player_x,
-					player_y,
-					0,
-					8,
-					16,
-					1,
-					false,
-					1
-				)
+				var sss = array_choose(st.step_sound)
+				var sfx = audio_play_sound_at(sss, player_x, player_y, 0, 8, 16, 1, false, 1)
+				audio_sound_gain(sfx, st.gain, 0)
+				audio_sound_pitch(sfx, st.pitch)
 				//level.playSoundFrom(this, a4.getPlaceSound(), a4.volume * 0.15f, a4.pitch);
 			}
 			//onWhat.onSteppedOn(level, new BlockCo(bx, by, bz));
@@ -481,15 +481,9 @@ function tick_player ()
 	if player_sneaking
 	{
 		y_slide_offset += 0.2
-		wish_xdirection *= 0.3
 		if on_ground
 		{
-			player_superjump_charge++
-		}
-		
-		if player_superjump_charge == 8
-		{
-			//audio_play_sound_at(sfx_lav_impact, player_x, player_y, 0, 8, 16, 1, false, 1)
+			wish_xdirection *= 0.3
 		}
 	}
 
@@ -501,30 +495,17 @@ function tick_player ()
 	{
 		--player_jump_coyote_time
 	}
-
-	player_superjump_ready = (player_superjump_charge - 8) > 0
 	if (on_ground or player_jump_coyote_time > 0) and wish_ydirection <> 0
 	{
 		var jpower = 0.42
-		var did_superjump = false
-		if player_superjump_ready and player_was_sneaking and not player_sneaking
-		{
-			jpower *= 2
-			player_superjump_charge = 0
-			did_superjump = true
-		}
 		//TODO:THIS
 		if true//array_length(map.get_colliders(rect_expand(player_box, 0, 0.01))) <= 0
 		{
 			speed_y = jpower
 			var sfx
 			var pitch = 1
-			if did_superjump
-			{
-				sfx = sfx_lav_fire
-				pitch = 0.9 + random_range(-0.1, 0.1)
-			}
-			else if player_sneaking
+
+			if player_sneaking
 			{
 				sfx = pl_jump1
 			}
@@ -544,10 +525,37 @@ function tick_player ()
 		speed_x += ss
 	}
 	//moveRelative(x_direction, z_direction, onGround ? 0.1f : 0.02f);
+	
+	var screw_gravity = false
+	if player_inside_climbable()
+	{
+		fall_distance = 0
+		speed_y = max(speed_y, -0.15)
+	}
+	
 	move(speed_x, speed_y)
+	
+	if player_inside_climbable()
+	{
+		if wish_sneak
+		{
+			speed_y = 0
+			screw_gravity = true
+		}
+		if horizontal_collision or wish_ydirection <> 0
+		{
+			speed_y = 0.2
+			screw_gravity = false
+		}
+	}
+	
 	speed_x *= 0.91
 	speed_y *= 0.98
-	speed_y -= 0.08
+	
+	if not screw_gravity
+	{
+		speed_y -= 0.08
+	}
 	if on_ground
 	{
 		speed_x *= 0.6
@@ -563,9 +571,5 @@ function tick_player ()
 	player_bob += (hmoment-player_bob) * 0.4
 	player_tilt += (fallangle-player_tilt) * 0.8
 	
-	if not player_sneaking
-	{
-		player_superjump_charge = 0
-	}
 }
 

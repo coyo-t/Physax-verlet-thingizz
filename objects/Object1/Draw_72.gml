@@ -21,19 +21,8 @@ var depth_range = 1600
 
 begin
 	var tfac = timer.get_tfac()
-
-	//var walk = lerp(walk_dist_previous, walk_dist, tfac) * pi
-	//var bob = lerp(player_previous_bob, player_bob, tfac)
-	//var sx = sin(walk) * bob
-	//var tilt = lerp(player_previous_tilt, player_tilt, tfac)
-	//matrix_stack_push(matrix_build(sx * 0.5, -abs(cos(walk) * bob), 0, 0,0,0, 1,1,1))
-	//matrix_stack_push(matrix_build(0,0,0, 0,0, sx * 3, 1,1,1))
-	//matrix_stack_push(matrix_build(0,-abs(cos(walk-0.2)*bob)*5,0, 0,0,0, 1,1,1))
-	//matrix_stack_push(matrix_build(0,-tilt*0.5,0, 0,0,0, 1,1,1))
 	var hurt = lerp(player_previous_fall_hurt_time, player_fall_hurt_time, tfac)*timer.get_tps_reciprocal()
 	matrix_stack_push(matrix_build(0,0,0, 0,0,hurt*22.5, 1,1,1))
-	//matrix_stack_push(matrix_build(0,0,0, abs(cos(walk-0.2)*bob)*5, 0,0, 1,1,1))
-
 end
 
 matrix_stack_push(matrix_build(-cam.x, -cam.y, depth_range/2, 0,0,0, 1,1,1))

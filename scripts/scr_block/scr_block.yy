@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_block",
   "parent":{
-    "name":"scripts",
-    "path":"folders/scripts.yy",
+    "name":"block",
+    "path":"folders/scripts/block.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

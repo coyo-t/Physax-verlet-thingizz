@@ -23,7 +23,7 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		{
 			return false
 		}
-		var cur = get_block(_x, _y)
+		var cur = fastget_block(_x, _y)
 		if cur == _type
 		{
 			return false
@@ -45,13 +45,18 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		}
 	}
 
+	static fastget_block = function (_x/*:Int*/, _y/*:Int*/)/*->Block*/
+	{
+		return blocks_get_by_id(blocks[# _x, _y])
+	}
+
 	static get_block = function (_x/*:Int*/, _y/*:Int*/) /*-> Block*/
 	{
 		if _x < 0 or _x >= wide or _y < 0 or _y >= tall
 		{
 			return get_out_of_bounds_type(_x, _y)
 		}
-		return blocks_get_by_id(blocks[# _x, _y])
+		return fastget_block(_x, _y)
 	}
 
 	static rebuild = function ()
@@ -113,23 +118,17 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 	static get_colliders = function (box/*:Rect*/) /*-> Array<Rect>*/
 	{
 		static TEMP = rect_create(0,0,0,0)
-
-		//var x0 = floor(rect_get_x0(box)+EPS)
-		//var x1 = floor(rect_get_x1(box)+EPS)
 		
-		//var y0 = floor(rect_get_y0(box)+EPS)
-		//var y1 = floor(rect_get_y1(box)+EPS)
-		
-		var x0 = floor(rect_get_x0(box)+EPS-1)
+		var x0 = floor(rect_get_x0(box)+EPS)
 		var x1 = floor(rect_get_x1(box)+1+EPS)
 		
-		var y0 = floor(rect_get_y0(box)+EPS-1)
+		var y0 = floor(rect_get_y0(box)+EPS)
 		var y1 = floor(rect_get_y1(box)+1+EPS)
 		
 		var outs/*: Array<Rect>*/ = []
-		for (var yy = y0; yy <= y1; yy++)
+		for (var yy = y0-1; yy < y1; yy++)
 		{
-			for (var xx = x0; xx <= x1; xx++)
+			for (var xx = x0; xx < x1; xx++)
 			{
 				var bloc = get_block(xx, yy)
 				if not bloc.collideable()

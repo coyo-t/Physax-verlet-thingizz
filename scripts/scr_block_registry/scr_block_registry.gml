@@ -1,5 +1,10 @@
 
-
+global.block_soundtypes = {
+	none:  new BlockSoundType(, 0.8),
+	dirt:  new BlockSoundType(, 0.6, "pl_step_dirt"),
+	tile:  new BlockSoundType(, 0.8, "pl_step_tile"),
+	grate: new BlockSoundType(, 0.5, "pl_step_grate"),
+}
 
 global.blocks_all = [] ///@is {array<Block>}
 global.blocks_nametable = {}
@@ -31,10 +36,18 @@ global.air = blocks_register("air", new AirBlock()) ///@is {AirBlock}
 global.out_of_bounds = blocks_register("out_of_bounds", new OutOfBoundsBlock()) ///@is {OutOfBoundsBlock}
 
 global.stone = blocks_register("stone", new Block()) ///@is {Block}
-global.stone.colour = c_grey
+with global.stone
+{
+	colour = c_grey
+	sound_type = global.block_soundtypes.tile
+}
 
 global.dirt = blocks_register("dirt", new Block()) ///@is {Block}
-global.dirt.colour = c_orange
+with global.dirt
+{
+	colour = c_orange
+	sound_type = global.block_soundtypes.dirt
+}
 
 global.slab = blocks_register("slab", new SlabBlock()) ///@is {SlabBlock}
 global.slab.colour = c_grey
@@ -55,8 +68,30 @@ global.right_stair = blocks_register("right_stairs", new StairBlock(+1)) ///@is 
 global.right_stair.colour = c_teal
 
 global.endless_down = blocks_register("top_platform", new EndlessBlock(+1))
-global.endless_down.colour = c_red
-
+with global.endless_down
+{
+	colour = c_red
+	sound_type = global.block_soundtypes.grate
+}
 
 global.endless_up = blocks_register("bottom_platform", new EndlessBlock(-1))
-global.endless_up.colour = c_maroon
+with global.endless_up
+{
+	colour = c_maroon
+	sound_type = global.block_soundtypes.grate
+}
+
+global.left_ladder = blocks_register("left_ladder", new LadderBlock("left"))
+global.left_ladder.colour = c_orange
+
+global.right_ladder = blocks_register("right_ladder", new LadderBlock("right"))
+global.right_ladder.colour = c_orange
+
+
+
+
+
+
+
+
+

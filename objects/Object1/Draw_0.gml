@@ -44,8 +44,6 @@ begin
 		var xx = lerp(rect_get_x0(player_previous_box), plrx0, tfac)
 		var yy = lerp(rect_get_y0(player_previous_box), plry0, tfac)
 		
-		viewcast_x = pxnow
-		viewcast_y = peyenow
 		viewcast_xdirection = world_mouse_x-viewcast_x
 		viewcast_ydirection = world_mouse_y-viewcast_y
 		rect_set_from(viewcast_box, viewcast_box_absolute)
@@ -60,26 +58,68 @@ begin
 			$"{power(viewcast_xdirection, 2)+power(viewcast_ydirection,2)}",
 		) 
 		
-		//draw_primitive_begin(pr_linelist)
-		//draw_vertex(viewcast_x, viewcast_y)
-		//draw_vertex(viewcast_x+viewcast_xdirection, viewcast_y+viewcast_ydirection)
-		//draw_primitive_end()
-		
-		//begin
-		//	var vx0 = viewcaster.box_min[0]
-		//	var vy0 = viewcaster.box_min[1]
-		//	var vx1 = viewcaster.box_max[0]
-		//	var vy1 = viewcaster.box_max[1]
+		begin
+			var vx0 = viewcaster.box_min[0]
+			var vy0 = viewcaster.box_min[1]
+			var vx1 = viewcaster.box_max[0]
+			var vy1 = viewcaster.box_max[1]
 			
-		//	draw_set_color(c_white)
-		//	draw_primitive_begin(pr_linestrip)
-		//	draw_vertex(vx0, vy0)
-		//	draw_vertex(vx1, vy0)
-		//	draw_vertex(vx1, vy1)
-		//	draw_vertex(vx0, vy1)
-		//	draw_vertex(vx0, vy0)
-		//	draw_primitive_end()
-		//end
+			draw_set_color(c_white)
+			draw_primitive_begin(pr_linestrip)
+			draw_vertex(vx0, vy0)
+			draw_vertex(vx1, vy0)
+			draw_vertex(vx1, vy1)
+			draw_vertex(vx0, vy1)
+			draw_vertex(vx0, vy0)
+			draw_primitive_end()
+			
+			vx0 = rect_get_x0(viewcast_box)
+			vy0 = rect_get_y0(viewcast_box)
+			vx1 = rect_get_x1(viewcast_box)
+			vy1 = rect_get_y1(viewcast_box)
+			
+			draw_set_color(c_ltgrey)
+			draw_primitive_begin(pr_linestrip)
+			draw_vertex(vx0, vy0)
+			draw_vertex(vx1, vy0)
+			draw_vertex(vx1, vy1)
+			draw_vertex(vx0, vy1)
+			draw_vertex(vx0, vy0)
+			draw_primitive_end()
+			
+			vx0 += viewcast_xdirection
+			vy0 += viewcast_ydirection
+			vx1 += viewcast_xdirection
+			vy1 += viewcast_ydirection
+
+			draw_set_color(c_ltgrey)
+			draw_primitive_begin(pr_linestrip)
+			draw_vertex(vx0, vy0)
+			draw_vertex(vx1, vy0)
+			draw_vertex(vx1, vy1)
+			draw_vertex(vx0, vy1)
+			draw_vertex(vx0, vy0)
+			draw_primitive_end()
+			
+			var xd = viewcast_xdirection < 0 ? -1 : +1
+			var yd = viewcast_ydirection < 0 ? -1 : +1
+			var xs = rect_get_wide(viewcast_box_absolute) * 0.5
+			var ys = rect_get_tall(viewcast_box_absolute) * 0.5
+			var xc = rect_get_centre_x(viewcast_box)
+			var yc = rect_get_centre_y(viewcast_box)
+			
+			var px = -yd * xs + xc
+			var py = +xd * ys + yc
+			draw_primitive_begin(pr_linelist)
+			draw_vertex(px, py)
+			draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
+			px = +yd * xs + xc
+			py = -xd * ys + yc
+			draw_vertex(px, py)
+			draw_vertex(px+viewcast_xdirection, py+viewcast_ydirection)
+			draw_primitive_end()
+			
+		end
 		
 		matrix_set(matrix_world, matrix_build(
 			xx-plrx0,

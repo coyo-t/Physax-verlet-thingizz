@@ -3,18 +3,15 @@
 
 function Block () constructor {
 	
-	runtime_id = 0
-	///@is {int}
+	runtime_id/*:Int*/ = 0
 	
-	name = ""
-	///@is {string}
+	name/*:String*/ = ""
 	
-	colour = c_white
-	///@is {int}
+	colour/*:Colour*/ = c_white
 	
-	shape = rect_create(0, 0, 1, 1)
-	///@is {Rect}
+	shape/*:Rect*/ = rect_create(0, 0, 1, 1)
 	
+	sound_type/*:BlockSoundType*/ = global.block_soundtypes.none
 	
 	static drawable = function () /*-> bool*/
 	{
@@ -39,6 +36,11 @@ function Block () constructor {
 	static get_render_shapes = function () /*-> array<Rect>*/
 	{
 		return [ rect_copy(shape) ]
+	}
+	
+	static is_climbable = function ()/*->Boolean*/
+	{
+		return false
 	}
 }
 
@@ -138,3 +140,19 @@ function EndlessBlock (_direction) : Block() constructor begin
 	}
 end
 
+function LadderBlock (_side) : Block() constructor begin
+	switch (_side)
+	{
+		case "left":
+			rect_set_x1(shape, 0.125)
+			break
+		case "right":
+			rect_set_x0(shape, 1-0.125)
+			break
+	}
+	
+	static is_climbable = function ()/*->Boolean*/
+	{
+		return true
+	}
+end

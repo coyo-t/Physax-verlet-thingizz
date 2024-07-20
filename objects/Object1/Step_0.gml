@@ -66,12 +66,20 @@ end
 
 if mouse_check_button(mb_left)
 {
-	var did = map.set_block(cursor_x, cursor_y, global.air)
-	if mouse_check_button_pressed(mb_left) or cursor_moved
+	if keyboard_check(vk_control)
 	{
-		if did and map.point_in_bounds(cursor_x, cursor_y)
+		viewcast_x = world_mouse_x
+		viewcast_y = world_mouse_y
+	}
+	else
+	{
+		var did = map.set_block(cursor_x, cursor_y, global.air)
+		if mouse_check_button_pressed(mb_left) or cursor_moved
 		{
-			audio_play_sound_at(sfx_break_bloc, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
+			if did and map.point_in_bounds(cursor_x, cursor_y)
+			{
+				audio_play_sound_at(sfx_break_bloc, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
+			}
 		}
 	}
 }
@@ -84,15 +92,6 @@ else if mouse_check_button(mb_right)
 		if did and ib
 		{
 			audio_play_sound_at(sfx_put_bloc, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
-		}
-		else
-		{
-			if not ib
-			{
-				//var si = audio_play_sound_at(sfx_folly_clink, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
-				//audio_sound_gain(si, 0.5, 0)
-				//audio_sound_pitch(si, 0.4)
-			}
 		}
 	}
 }

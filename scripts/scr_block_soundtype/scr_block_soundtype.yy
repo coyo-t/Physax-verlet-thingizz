@@ -1,9 +1,9 @@
 {
   "$GMScript":"",
-  "%Name":"scr_block_registry",
+  "%Name":"scr_block_soundtype",
   "isCompatibility":false,
   "isDnD":false,
-  "name":"scr_block_registry",
+  "name":"scr_block_soundtype",
   "parent":{
     "name":"block",
     "path":"folders/scripts/block.yy",
