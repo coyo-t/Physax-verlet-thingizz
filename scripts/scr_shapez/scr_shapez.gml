@@ -71,6 +71,15 @@ function Rect (_x0, _y0, _x1, _y1) constructor begin
 		return self
 	}
 	
+	///@func moved
+	///@arg {Real} x
+	///@arg {Real} y
+	///@returns {Struct.Rect} new
+	static moved = function (x, y)
+	{
+		return copy().move(x, y)
+	}
+	
 	///@func clip_x_collide 
 	///@arg {Struct.Rect} c
 	///@arg {Real} xa

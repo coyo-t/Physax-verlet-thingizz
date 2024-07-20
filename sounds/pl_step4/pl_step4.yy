@@ -1,0 +1,28 @@
+{
+  "$GMSound":"",
+  "%Name":"pl_step4",
+  "audioGroupId":{
+    "name":"audiogroup_default",
+    "path":"audiogroups/audiogroup_default",
+  },
+  "bitDepth":1,
+  "bitRate":128,
+  "compression":0,
+  "conversionMode":0,
+  "duration":0.255873,
+  "name":"pl_step4",
+  "parent":{
+    "name":"step",
+    "path":"folders/sound/step.yy",
+  },
+  "preload":false,
+  "resourceType":"GMSound",
+  "resourceVersion":"2.0",
+  "sampleRate":44100,
+  "soundFile":"pl_step4.wav",
+  "tags":[
+    "pl_step_generic",
+  ],
+  "type":0,
+  "volume":1.0,
+}

@@ -31,9 +31,10 @@ if mouse_check_button(mb_middle)
 	cam.x -= mxd * ss
 	cam.y -= myd * ss
 }
+audio_listener_orientation(0, 0, -1, 0, 1, 0)
+audio_listener_position(cam.x, cam.y, 0)
 
-
-
+var cursor_moved = false
 begin
 	var zoom = cam.zoom
 
@@ -48,19 +49,45 @@ begin
 
 	//update_player_co(mx, my)
 	
+	var omx = cursor_x
+	var omy = cursor_y
 	cursor_x = floor(mx)
 	cursor_y = floor(my)
-
+	cursor_moved |= cursor_x <> omx or cursor_y <> omy
 end
 
 
 if mouse_check_button(mb_left)
 {
-	map.set_block(cursor_x, cursor_y, global.air)
+	var did = map.set_block(cursor_x, cursor_y, global.air)
+	if mouse_check_button_pressed(mb_left) or cursor_moved
+	{
+		if did and map.point_in_bounds(cursor_x, cursor_y)
+		{
+			audio_play_sound_at(sfx_break_bloc, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
+		}
+	}
 }
 else if mouse_check_button(mb_right)
 {
-	map.set_block(cursor_x, cursor_y, palette[current_paint])
+	var did = map.set_block(cursor_x, cursor_y, palette[current_paint])
+	if mouse_check_button_pressed(mb_right) or cursor_moved
+	{
+		var ib = map.point_in_bounds(cursor_x, cursor_y)
+		if did and ib
+		{
+			audio_play_sound_at(sfx_put_bloc, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
+		}
+		else
+		{
+			if not ib
+			{
+				//var si = audio_play_sound_at(sfx_folly_clink, cursor_x+0.5, cursor_y+0.5, 0, 8, 16, 1, false, 1)
+				//audio_sound_gain(si, 0.5, 0)
+				//audio_sound_pitch(si, 0.4)
+			}
+		}
+	}
 }
 
 begin

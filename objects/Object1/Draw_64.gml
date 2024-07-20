@@ -1,7 +1,7 @@
 
-//draw_set_colour(c_yellow)
-//draw_text(32, 32, $"{palette[current_paint].name}")
-//draw_set_color(c_white)
+draw_set_colour(c_yellow)
+draw_text(32, 32, $"dist: {string_format(walk_dist, 0, 8)}\nnext: {next_step}")
+draw_set_color(c_white)
 
 begin
 	var paint = palette[current_paint]
@@ -18,7 +18,8 @@ begin
 	draw_primitive_begin(pr_trianglelist)
 	
 	var hofs = (1-paint.shape.get_tall()) * 1.1
-	
+	var x0 = paint.shape.x0
+	var x1 = paint.shape.x1
 	// top
 	draw_vertex_color(0, 0-hofs, topc, 1)
 	draw_vertex_color(1, 0.5-hofs, topc, 1)

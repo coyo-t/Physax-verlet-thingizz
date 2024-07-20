@@ -20,6 +20,15 @@ function Block () constructor begin
 	///@func collideable
 	///@returns {Bool}
 	static collideable = global.PREDICATE_TRUE
+	
+	///@func get_colliders
+	///@arg {Real} _xofs
+	///@arg {Real} _yofs
+	///@returns {Array<Struct.Rect>}
+	static get_colliders = function (_xofs, _yofs)
+	{
+		return [shape.copy().move(_xofs, _yofs)]
+	}
 end
 
 function AirBlock () : Block() constructor begin
@@ -39,6 +48,38 @@ end
 
 function SlabBlock (_height=0.5) : Block() constructor begin
 	shape.set_corners(0, 0, 1, _height)
+end
+
+function FenceBlock () : Block() constructor begin
+	
+	var texels = 1/16
+	shape.set_corners(0.5-texels*2, 0, 0.5+texels*2, 1)
+	
+	static get_colliders = function (_xofs, _yofs)
+	{
+		return [ new Rect(shape.x0+_xofs, shape.y0+_yofs, shape.x1+_xofs, shape.y1+_yofs+0.5) ]
+	}
+end
+
+function StairBlock (_facing) : Block() constructor begin
+	facing = _facing
+	
+	shape.set_corners(0, 0, 1, 0.5)
+	shape_top = new Rect(0,0,0,0)
+	
+	if _facing < 0
+	{
+		shape_top.set_corners(0.5, 0.5, 1, 1)
+	}
+	else if _facing > 0
+	{
+		shape_top.set_corners(0, 0.5, 0.5, 1)
+	}
+	
+	static get_colliders = function (_xofs, _yofs)
+	{
+		return [shape.moved(_xofs, _yofs), shape_top.moved(_xofs, _yofs)]
+	}
 end
 
 /// @type {Array<Struct.Block>}
@@ -95,3 +136,13 @@ slab.colour = c_grey
 
 quarter_slab = block_register("slab", new SlabBlock(0.25))
 quarter_slab.colour = c_grey
+
+precarious = block_register("precarious", new FenceBlock())
+precarious.colour = merge_color(c_orange, c_black, 0.4)
+
+left_stair = block_register("left_stairs", new StairBlock(-1))
+left_stair.colour = c_aqua
+
+right_stair = block_register("right_stairs", new StairBlock(+1))
+right_stair.colour = c_teal
+

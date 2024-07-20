@@ -1,4 +1,11 @@
 
+#macro MODE_OBJECT  0
+#macro MODE_EDIT    1
+#macro MODE_COMMAND 2
+
+///@type {Array<Asset.GMSound}
+step_sounds_generic = tag_get_asset_ids("pl_step_generic", asset_sound)
+
 tick = method(self, function () {
 	player_xprevious = player_x
 	player_yprevious = player_y
@@ -64,6 +71,7 @@ player_box_absolute = new Rect(0,0,0,0)
 ///@type {Struct.Rect}
 player_previous_box = new Rect(0,0,0,0)
 
+allow_jump_refire = 0
 
 slide = true
 
@@ -80,7 +88,8 @@ speed_x = 0
 speed_y = 0
 fall_distance = 0
 foot_size = 0.6
-make_step_sounds = false
+make_step_sounds = true
+next_step = 0
 
 function update_player_co (_x, _y, _include_pev=false)
 {
@@ -125,7 +134,7 @@ update_player_co(map.wide * 0.5, 1.5, true)
 function move (xDirection, yDirection)
 {
 	y_slide_offset *= 0.4
-	var x_begin = x
+	var x_begin = player_x
 		
 	var beginXD = xDirection;
 	var beginYD = yDirection;
@@ -213,7 +222,9 @@ function move (xDirection, yDirection)
 			// x
 			var slideDelta = player_box.y0 - tempRect2.y0
 			if slideDelta > 0 and (player_box.y0 <> tempHitbox.y0)
+			{
 				y_slide_offset += slideDelta + 0.01
+			}
 		}
 	}
 	sync_player_co_with_box()
@@ -226,10 +237,22 @@ function move (xDirection, yDirection)
 	horizontal_collision = xCollided
 	var verticalCollision = yDirection <> beginYD
 	on_ground = verticalCollision and beginYD < 0
+	
+	var did_land = false
 	if (on_ground)
 	{
 		if fall_distance > 0
 		{
+			did_land = true
+			var ff = fall_distance - 3
+			if fall_distance > 1
+			{
+				if ff > 0
+				{
+					audio_play_sound_at(pl_fallpain3, player_x, player_y, 0, 8, 16, 1, false, 1)
+				}
+				audio_play_sound_at(pl_jumpland2, player_x, player_y, 0, 8, 16, 1, false, 1)
+			}
 			//causeFallDamage(fallDistance);
 			fall_distance = 0
 		}
@@ -246,53 +269,54 @@ function move (xDirection, yDirection)
 	{
 		speed_y = 0
 	}
-	var diff_x = x - x_begin
-	walk_dist = walk_dist + abs(diff_x) * 0.6
-	//if make_step_sounds
-	//{
-	//	var bx = floor(player_x)
-	//	var by = floor(player_y - 0.2)
-	//	var onWhat = level.getTile(bx, by, bz);
-	//	if (walkDist > nextStep && onWhat != Blocks.AIR)
-	//	{
-	//		nextStep++;
-	//		var a4 = onWhat.properties.soundType();
-	//		if (!onWhat.getMaterial().isLiquid())
-	//		{
-	//			level.playSoundFrom(this, a4.getPlaceSound(), a4.volume * 0.15f, a4.pitch);
-	//		}
-	//		onWhat.onSteppedOn(level, new BlockCo(bx, by, bz));
-	//	}
-	//}
-	
-	//var inWater = isInWater();
-	//if (level.areFieryTilesInside(hitbox))
-	//{
-	//	hurt(1);
-	//	if (!inWater)
-	//	{
-	//		if ((++onFireTime) == 0)
-	//		{
-	//			onFireTime = 300;
-	//		}
-	//	}
-	//}
-	//else if (onFireTime <= 0)
-	//{
-	//	onFireTime = -fireGraceTime;
-	//}
-	//if (inWater && onFireTime > 0)
-	//{
-	//	level.playSoundFrom(this, "random.fizz", 0.7f, 1.6f + (random.nextFloat() - random.nextFloat()) * 0.4f);
-	//	onFireTime = -fireGraceTime;
-	//}
+	var diff_x = player_x - x_begin
+	walk_dist += abs(diff_x) * 0.6
+	if make_step_sounds
+	{
+		
+		var bx = floor(player_x)
+		var by = floor(player_y - 0.2)
+		var onWhat = map.get_block(bx, by)
+		//show_debug_message(onWhat)
+		if walk_dist > next_step and onWhat <> global.air
+		{
+			next_step++;
+			//var a4 = onWhat.properties.soundType();
+			//if (!onWhat.getMaterial().isLiquid())
+			if true
+			{
+				audio_play_sound_at(
+					array_choose(step_sounds_generic),
+					player_x,
+					player_y,
+					0,
+					8,
+					16,
+					1,
+					false,
+					1
+				)
+				//level.playSoundFrom(this, a4.getPlaceSound(), a4.volume * 0.15f, a4.pitch);
+			}
+			//onWhat.onSteppedOn(level, new BlockCo(bx, by, bz));
+		}
+	}
 }
 
+previous_wish_ydirection = 0
 function tick_player ()
 {
-	if on_ground and wish_ydirection <> 0 
+	var do_refire_check = wish_ydirection == previous_wish_ydirection
+	if not do_refire_check
+	{
+		allow_jump_refire = 0
+	}
+	previous_wish_ydirection = wish_ydirection
+	if on_ground and (--allow_jump_refire <= 0) and wish_ydirection <> 0 
 	{
 		speed_y = 0.42
+		audio_play_sound_at(pl_jump2, player_x, player_y, 0, 8, 16, 1, false, 1)
+		//allow_jump_refire = floor(timer.get_tps() * 0.25)
 	}
 	var ss = wish_xdirection * (on_ground ? 0.1 : 0.02)
 	if abs(ss) >= 0.01

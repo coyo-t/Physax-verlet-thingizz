@@ -112,12 +112,11 @@ function Map (_wide, _tall) constructor begin
 	static get_colliders = function (box)
 	{
 		static TEMP = new Rect(0,0,0,0)
-		static EPS = 0.0000001 // 1.0E-7
 
-		var x0 = floor(box.x0+EPS)
+		var x0 = floor(box.x0+EPS-1)
 		var x1 = floor(box.x1+1+EPS)
 		
-		var y0 = floor(box.y0+EPS)
+		var y0 = floor(box.y0+EPS-1)
 		var y1 = floor(box.y1+1+EPS)
 		
 		var outs = []
@@ -130,15 +129,15 @@ function Map (_wide, _tall) constructor begin
 				{
 					continue
 				}
-				var bs = bloc.shape
-				var outb = new Rect(bs.x0+xx, bs.y0+yy, bs.x1+xx, bs.y1+yy)
-				//var over = rectangle_in_rectangle(
-				//	box.x0, box.y0, box.x1, box.y1,
-				//	outb.x0, outb.y0, outb.x1, outb.y1
-				//)
-				if box.overlapping(outb)
+				var shapes = bloc.get_colliders(xx, yy)
+				
+				for (var bb = array_length(shapes); bb > 0;)
 				{
-					array_push(outs, outb)
+					var shape = shapes[--bb]
+					if shape.overlapping(box)
+					{
+						array_push(outs, shape)
+					}
 				}
 			}
 			
@@ -146,4 +145,8 @@ function Map (_wide, _tall) constructor begin
 		return outs
 	}
 	
+	static point_in_bounds = function (_x, _y)
+	{
+		return 0 <= _x and _x < wide and 0 <= _y and _y < tall
+	}
 end
