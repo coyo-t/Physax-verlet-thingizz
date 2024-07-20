@@ -24,7 +24,6 @@
     {"$GMFolder":"","%Name":"sprite","folderPath":"folders/sprite.yy","name":"sprite","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
   "IncludedFiles":[
-    {"$GMIncludedFile":"","%Name":"ApolloHelp.html","CopyToMask":0,"filePath":"datafiles","name":"ApolloHelp.html","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
     {"$GMIncludedFile":"","%Name":"ApolloHelp.html","CopyToMask":-1,"filePath":"datafiles","name":"ApolloHelp.html","resourceType":"GMIncludedFile","resourceVersion":"2.0",},
   ],
   "isEcma":false,

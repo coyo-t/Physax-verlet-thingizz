@@ -574,6 +574,8 @@ function trace_hull (_get_bloc_callback)
 		
 	}
 	
+	show_debug_message($"{time_next[0]*2}, {time_next[1]*2}")
+	
 	vec_set_from(leading_start, leading_corner)
 	vec_set_from(trailing_start, trailing_corner)
 	
@@ -596,6 +598,30 @@ function trace_hull (_get_bloc_callback)
 	var x0, y0, x1, y1
 	while (--maxiter) >= 0
 	{
+		if ddid and not RSLATCH
+		{
+			var mm = max(time_next[Vec.x], time_next[Vec.y]) * time_max
+			var xofs = min(abs(normal[0]) * mm, 1) * stepx
+			var yofs = min(abs(normal[1]) * mm, 1) * stepy
+			//var xofs = leading_corner[0]-leading_start[0] - normal[Vec.x] * mm * time_delta[0]
+			//var yofs = leading_corner[1]-leading_start[1] - normal[Vec.y] * mm * time_delta[1]
+			
+			var xxx = leading_corner[0]
+			var yyy = leading_corner[1]
+			draw_set_color(c_red)
+			draw_set_alpha(1)
+			draw_arrow(
+				xxx-1,
+				yyy-1,
+				leading_start[0]+xofs-1,
+				leading_start[1]+yofs-1,
+				1/16
+			)
+			RSLATCH = true
+			
+		}
+		
+		
 		axis = time_next[Vec.x] < time_next[Vec.y] ? Vec.x : Vec.y
 		
 		begin
@@ -613,6 +639,9 @@ function trace_hull (_get_bloc_callback)
 			}
 		end
 		
+		
+		
+		#region try1
 		//if ddid and false
 		//{
 		//	xx = leading_cel[0] + 0.5
@@ -706,11 +735,8 @@ function trace_hull (_get_bloc_callback)
 		//	}
 		//	return ddid
 		//}
-		
-		if ddid
-		{
-			
-		}
+		#endregion
+
 		
 		if axis == Vec.x
 		{
@@ -758,6 +784,7 @@ function trace_hull (_get_bloc_callback)
 				ddid |= _get_bloc_callback(xx, yy)
 			}
 		}
+		
 		did |= ddid
 	}
 
