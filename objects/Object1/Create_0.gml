@@ -17,11 +17,12 @@ tick = method(self, function() /*=>*/ {
 	walk_dist_previous = walk_dist
 	player_previous_tilt = player_tilt
 	player_previous_fall_hurt_time = player_fall_hurt_time
+	player_was_sneaking = player_sneaking
 	rect_set_from(player_previous_box, player_box)
 	tick_player()
 })
 
-timer = new Timer(20) ///@is {Timer}
+timer/*:Timer*/ = new Timer(20)
 timer.time_scale = 1
 
 tempHitbox = rect_create(0,0,0,0) ///@is {Rect}
@@ -137,37 +138,47 @@ end
 
 #endregion
 
-player_x = 0 ///@is{number}
-player_y = 0 ///@is{number}
+#macro PLAYER_EYELINE_OFFSET (0.2)
+#macro PLAYER_HEIGHT_STANDING (1.8)
+#macro PLAYER_HEIGHT_SNEAKING (1.5-math_get_epsilon())
 
-player_xprevious = 0 ///@is{number}
-player_yprevious = 0 ///@is{number}
+player_x/*:Number*/ = 0
+player_y/*:Number*/ = 0
 
-player_wide = 0.6 ///@is{number}
-player_tall = 1.8 ///@is{number}
+player_xprevious/*:Number*/ = 0
+player_yprevious/*:Number*/ = 0
+
+player_wide/*:Number*/ = 0.6
+player_tall/*:Number*/ = PLAYER_HEIGHT_STANDING
 
 player_box = rect_create(0,0,0,0) ///@is{Rect}
 player_box_absolute = rect_create(0,0,0,0) ///@is{Rect}
 player_previous_box = rect_create(0,0,0,0) ///@is{Rect}
 
-player_eyeline = player_tall - 0.2
+player_eyeline = player_tall - PLAYER_EYELINE_OFFSET
 
 player_bob = 0
 player_previous_bob = 0
 player_tilt = 0
 player_previous_tilt = 0
 
-player_jump_coyote_time_max = 20 * (1/20)
+player_jump_coyote_time_max = 2 * (1/20)
 player_jump_coyote_time = player_jump_coyote_time_max
+
+player_sneaking = false
+player_was_sneaking = false
+
 allow_jump_refire = 0
 
 slide = true
 
 wish_xdirection = 0
 wish_ydirection = 0
+wish_sneak = false
 
 player_fall_hurt_time = 0
 player_previous_fall_hurt_time = 0
+player_superjump_charge = 0
 on_ground = false
 horizontal_collision = false
 collision = false
@@ -182,6 +193,7 @@ foot_size = 0.6
 make_step_sounds = true
 next_step = 0
 
+///@self
 function update_player_co (_x/*:number*/, _y/*:number*/, _include_pev=false)
 {
 	player_x = _x
@@ -204,16 +216,54 @@ function update_player_co (_x/*:number*/, _y/*:number*/, _include_pev=false)
 	}
 }
 
-function sync_player_box_with_co ()
+///@self
+function sync_player_box_with_co (_box=player_box)
 {
-	rect_set_from(player_box, player_box_absolute)
-	rect_move(player_box, player_x, player_y-height_offset+y_slide_offset)
+	rect_set_from(_box, player_box_absolute)
+	rect_move(_box, player_x, player_y-height_offset+y_slide_offset)
+	player_eyeline = player_tall - PLAYER_EYELINE_OFFSET
 }
 
+///@self
 function sync_player_co_with_box ()
 {
 	player_x = rect_get_centre_x(player_box)
 	player_y = rect_get_y0(player_box) + height_offset - y_slide_offset
+	player_eyeline = player_tall - PLAYER_EYELINE_OFFSET
+}
+
+///@self
+///@returns whether or not the new height could be changed to
+function player_try_change_height (_new_height/*:Number*/)/*->Boolean*/
+{
+	static temp = rect_create(0,0,0,0)
+	static temp2 = rect_create(0,0,0,0)
+	if _new_height == player_tall
+	{
+		return true
+	}
+	
+	if _new_height < player_tall
+	{
+		player_tall = _new_height
+		rect_set_y1(player_box_absolute, _new_height)
+		sync_player_box_with_co()
+		return true
+	}
+	
+	
+	rect_set_from(temp, player_box_absolute)
+	rect_set_y1(player_box_absolute, _new_height)
+	sync_player_box_with_co(temp2)
+	if array_length(map.get_colliders(temp2)) > 0
+	{
+		rect_set_from(player_box_absolute, temp)
+		return false
+	}
+	player_tall = _new_height
+	rect_set_y1(player_box_absolute, _new_height)
+	sync_player_box_with_co()
+	return true
 }
 
 //update_player_co(map.wide * 0.5, map.tall)
@@ -221,6 +271,7 @@ update_player_co(map.wide * 0.5, 1.5, true)
 
 rect_set_from(viewcast_box_absolute, player_box_absolute)
 
+///@self
 function move (xDirection/*:number*/, yDirection/*:number*/)
 {
 	y_slide_offset *= 0.4
@@ -235,7 +286,7 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 	//}
 	
 	rect_set_from(tempHitbox, player_box)
-	var broadPhase/*:array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection));
+	var broadPhase/*:Array<Rect>*/ = map.get_colliders(rect_expand(player_box, xDirection, yDirection));
 	
 	begin
 		// y axis
@@ -401,19 +452,42 @@ function move (xDirection/*:number*/, yDirection/*:number*/)
 	}
 }
 
-previous_wish_ydirection = 0
+
+///@self
 function tick_player ()
 {
+	static temprect = rect_create(0,0,0,0)
+	
 	if player_fall_hurt_time > 0
 	{
 		player_fall_hurt_time -= 0.1
 	}
 	
-	var do_refire_check = wish_ydirection == previous_wish_ydirection
-	if not do_refire_check
+	player_sneaking = wish_sneak > 0.5
+	if player_sneaking <> player_was_sneaking
 	{
-		allow_jump_refire = 0
+		var nh = player_sneaking ? PLAYER_HEIGHT_SNEAKING : PLAYER_HEIGHT_STANDING
+		if not player_try_change_height(nh)
+		{
+			player_sneaking = player_was_sneaking
+		}
 	}
+	
+	if player_sneaking
+	{
+		y_slide_offset += 0.2
+		wish_xdirection *= 0.3
+		if on_ground
+		{
+			player_superjump_charge++
+		}
+		
+		if player_superjump_charge == 8
+		{
+			//audio_play_sound_at(sfx_lav_impact, player_x, player_y, 0, 8, 16, 1, false, 1)
+		}
+	}
+
 	if on_ground
 	{
 		player_jump_coyote_time = floor(player_jump_coyote_time_max * timer.get_tps())
@@ -422,14 +496,43 @@ function tick_player ()
 	{
 		--player_jump_coyote_time
 	}
-	show_debug_message(player_jump_coyote_time)
-	previous_wish_ydirection = wish_ydirection
+
+	var superjump_ready = (player_superjump_charge - 8) > 0
 	if (on_ground or player_jump_coyote_time > 0) and wish_ydirection <> 0
 	{
-		speed_y = 0.42
-		audio_play_sound_at(pl_jump2, player_x, player_y, 0, 8, 16, 1, false, 1)
-		//allow_jump_refire = floor(timer.get_tps() * 0.25)
+		var jpower = 0.42
+		var did_superjump = false
+		if superjump_ready and player_was_sneaking and not player_sneaking
+		{
+			jpower *= 2
+			player_superjump_charge = 0
+			did_superjump = true
+		}
+		
+		if array_length(map.get_colliders(rect_expand(player_box, 0, jpower))) <= 0
+		{
+			speed_y = jpower
+			var sfx
+			var pitch = 1
+			if did_superjump
+			{
+				sfx = sfx_lav_fire
+				pitch = 0.9
+			}
+			else if player_sneaking
+			{
+				sfx = pl_jump1
+			}
+			else
+			{
+				sfx = pl_jump2
+			}
+			
+			audio_play_sound_at(sfx, player_x, player_y, 0, 8, 16, 1, false, 1, 0.6,0,pitch)
+			player_jump_coyote_time = 0
+		}
 	}
+	
 	var ss = wish_xdirection * (on_ground ? 0.1 : 0.02)
 	if abs(ss) >= 0.01
 	{
@@ -454,5 +557,10 @@ function tick_player ()
 	}
 	player_bob += (hmoment-player_bob) * 0.4
 	player_tilt += (fallangle-player_tilt) * 0.8
+	
+	if not player_sneaking
+	{
+		player_superjump_charge = 0
+	}
 }
 

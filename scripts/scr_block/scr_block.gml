@@ -72,8 +72,8 @@ function OutOfBoundsBlock () : Block() constructor begin
 end
 
 ///@hint SlabBlock extends Block
-function SlabBlock (_height=0.5) : Block() constructor begin
-	rect_set_corners(shape, 0, 0, 1, _height)
+function SlabBlock (_height=0.5, _base=0.0) : Block() constructor begin
+	rect_set_corners(shape, 0, _base, 1, _height)
 end
 
 ///@hint FenceBlock extends Block

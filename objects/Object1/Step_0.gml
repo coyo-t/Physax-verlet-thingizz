@@ -106,13 +106,14 @@ begin
 	//wish_xdirection = hinp
 	wish_ydirection |= keyboard_check(vk_space)
 	
+	wish_sneak = (wish_sneak + keyboard_check(vk_control)) * 0.5
+	
 end
 
 var ticks = timer.step()
 for (var i = ticks; i-- > 0;)
 {
 	tick()
-	
 	wish_xdirection -= wish_xdirection / (ticks-i)*0.5
 }
 
@@ -120,6 +121,7 @@ if ticks <> 0
 {
 	wish_xdirection = 0
 	wish_ydirection = 0
+	wish_sneak = false
 }
 
 paint_changed = current_paint <> previous_paint

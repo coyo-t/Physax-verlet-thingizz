@@ -114,6 +114,12 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 	{
 		static TEMP = rect_create(0,0,0,0)
 
+		//var x0 = floor(rect_get_x0(box)+EPS)
+		//var x1 = floor(rect_get_x1(box)+EPS)
+		
+		//var y0 = floor(rect_get_y0(box)+EPS)
+		//var y1 = floor(rect_get_y1(box)+EPS)
+		
 		var x0 = floor(rect_get_x0(box)+EPS-1)
 		var x1 = floor(rect_get_x1(box)+1+EPS)
 		
@@ -121,9 +127,9 @@ function Map (_wide/*:int*/, _tall/*:int*/) constructor begin
 		var y1 = floor(rect_get_y1(box)+1+EPS)
 		
 		var outs/*: Array<Rect>*/ = []
-		for (var yy = y0; yy < y1; yy++)
+		for (var yy = y0; yy <= y1; yy++)
 		{
-			for (var xx = x0; xx < x1; xx++)
+			for (var xx = x0; xx <= x1; xx++)
 			{
 				var bloc = get_block(xx, yy)
 				if not bloc.collideable()

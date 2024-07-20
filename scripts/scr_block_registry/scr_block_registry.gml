@@ -42,6 +42,9 @@ global.slab.colour = c_grey
 global.quarter_slab = blocks_register("slab", new SlabBlock(0.25)) ///@is {SlabBlock}
 global.quarter_slab.colour = c_grey
 
+global.upper_slab = blocks_register("upper_slab", new SlabBlock(1, 0.5))
+global.quarter_slab.colour = c_ltgrey
+
 global.precarious = blocks_register("precarious", new FenceBlock()) ///@is {FenceBlock}
 global.precarious.colour = merge_color(c_orange, c_black, 0.4)
 

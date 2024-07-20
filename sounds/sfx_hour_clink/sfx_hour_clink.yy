@@ -1,0 +1,25 @@
+{
+  "$GMSound":"",
+  "%Name":"sfx_hour_clink",
+  "audioGroupId":{
+    "name":"audiogroup_default",
+    "path":"audiogroups/audiogroup_default",
+  },
+  "bitDepth":1,
+  "bitRate":128,
+  "compression":0,
+  "conversionMode":0,
+  "duration":1.404807,
+  "name":"sfx_hour_clink",
+  "parent":{
+    "name":"sound",
+    "path":"folders/sound.yy",
+  },
+  "preload":false,
+  "resourceType":"GMSound",
+  "resourceVersion":"2.0",
+  "sampleRate":44100,
+  "soundFile":"sfx_hour_clink.wav",
+  "type":0,
+  "volume":1.0,
+}

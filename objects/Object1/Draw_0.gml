@@ -60,28 +60,26 @@ begin
 			$"{power(viewcast_xdirection, 2)+power(viewcast_ydirection,2)}",
 		) 
 		
-		draw_primitive_begin(pr_linelist)
-		draw_vertex(viewcast_x, viewcast_y)
-		draw_vertex(viewcast_x+viewcast_xdirection, viewcast_y+viewcast_ydirection)
-		draw_primitive_end()
+		//draw_primitive_begin(pr_linelist)
+		//draw_vertex(viewcast_x, viewcast_y)
+		//draw_vertex(viewcast_x+viewcast_xdirection, viewcast_y+viewcast_ydirection)
+		//draw_primitive_end()
 		
-
-		
-		begin
-			var vx0 = viewcaster.box_min[0]
-			var vy0 = viewcaster.box_min[1]
-			var vx1 = viewcaster.box_max[0]
-			var vy1 = viewcaster.box_max[1]
+		//begin
+		//	var vx0 = viewcaster.box_min[0]
+		//	var vy0 = viewcaster.box_min[1]
+		//	var vx1 = viewcaster.box_max[0]
+		//	var vy1 = viewcaster.box_max[1]
 			
-			draw_set_color(c_white)
-			draw_primitive_begin(pr_linestrip)
-			draw_vertex(vx0, vy0)
-			draw_vertex(vx1, vy0)
-			draw_vertex(vx1, vy1)
-			draw_vertex(vx0, vy1)
-			draw_vertex(vx0, vy0)
-			draw_primitive_end()
-		end
+		//	draw_set_color(c_white)
+		//	draw_primitive_begin(pr_linestrip)
+		//	draw_vertex(vx0, vy0)
+		//	draw_vertex(vx1, vy0)
+		//	draw_vertex(vx1, vy1)
+		//	draw_vertex(vx0, vy1)
+		//	draw_vertex(vx0, vy0)
+		//	draw_primitive_end()
+		//end
 		
 		matrix_set(matrix_world, matrix_build(
 			xx-plrx0,

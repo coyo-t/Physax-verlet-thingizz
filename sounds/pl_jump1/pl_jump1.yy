@@ -1,0 +1,25 @@
+{
+  "$GMSound":"",
+  "%Name":"pl_jump1",
+  "audioGroupId":{
+    "name":"audiogroup_default",
+    "path":"audiogroups/audiogroup_default",
+  },
+  "bitDepth":1,
+  "bitRate":128,
+  "compression":0,
+  "conversionMode":0,
+  "duration":0.550748,
+  "name":"pl_jump1",
+  "parent":{
+    "name":"Physax verlet thingizz",
+    "path":"Physax verlet thingizz.yyp",
+  },
+  "preload":false,
+  "resourceType":"GMSound",
+  "resourceVersion":"2.0",
+  "sampleRate":44100,
+  "soundFile":"pl_jump1.wav",
+  "type":0,
+  "volume":1.0,
+}
