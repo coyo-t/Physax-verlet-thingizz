@@ -10,6 +10,7 @@
   },
   "defaultScriptType":1,
   "Folders":[
+    {"$GMFolder":"","%Name":"rooms","folderPath":"folders/rooms.yy","name":"rooms","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"scripts","folderPath":"folders/scripts.yy","name":"scripts","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"block","folderPath":"folders/scripts/block.yy","name":"block","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"maths","folderPath":"folders/scripts/maths.yy","name":"maths","resourceType":"GMFolder","resourceVersion":"2.0",},
@@ -22,11 +23,13 @@
   "isEcma":false,
   "LibraryEmitters":[],
   "MetaData":{
-    "IDEVersion":"2024.4.0.137",
+    "IDEVersion":"2024.6.0.157",
   },
   "name":"Physax verlet thingizz",
   "resources":[
     {"id":{"name":"Game","path":"objects/Game/Game.yy",},},
+    {"id":{"name":"RaycastTest","path":"objects/RaycastTest/RaycastTest.yy",},},
+    {"id":{"name":"room_raycaster_test","path":"rooms/room_raycaster_test/room_raycaster_test.yy",},},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
     {"id":{"name":"scr_block_registry","path":"scripts/scr_block_registry/scr_block_registry.yy",},},
     {"id":{"name":"scr_block_soundtype","path":"scripts/scr_block_soundtype/scr_block_soundtype.yy",},},
@@ -42,7 +45,6 @@
     {"id":{"name":"scr_misc_thingz","path":"scripts/scr_misc_thingz/scr_misc_thingz.yy",},},
     {"id":{"name":"scr_player","path":"scripts/scr_player/scr_player.yy",},},
     {"id":{"name":"scr_rect","path":"scripts/scr_rect/scr_rect.yy",},},
-    {"id":{"name":"scr_sound_util","path":"scripts/scr_sound_util/scr_sound_util.yy",},},
     {"id":{"name":"scr_timer","path":"scripts/scr_timer/scr_timer.yy",},},
     {"id":{"name":"scr_vec","path":"scripts/scr_vec/scr_vec.yy",},},
     {"id":{"name":"pl_dirt1","path":"sounds/pl_dirt1/pl_dirt1.yy",},},
@@ -82,6 +84,7 @@
   "resourceType":"GMProject",
   "resourceVersion":"2.0",
   "RoomOrderNodes":[
+    {"roomId":{"name":"room_raycaster_test","path":"rooms/room_raycaster_test/room_raycaster_test.yy",},},
     {"roomId":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
   ],
   "templateType":"game",

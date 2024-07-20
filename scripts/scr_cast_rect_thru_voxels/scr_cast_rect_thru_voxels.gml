@@ -44,41 +44,30 @@ constructor begin
 	
 	time/*Value*/ = 0.0
 	time_max/*Value*/ = 0.0
-	time_accumulator/*Value*/ = 0.0
 	time_delta/*Vec*/ = vec_create()
 	time_next/*Vec*/ = vec_create()
 	
-	axis/*Int*/ = 0
+	axis/*Int*/ = Vec.x
 	
-	hard_time_limit/*Value*/ = infinity
-	hard_time_limit_s/*Value*/ = infinity
-	
-	adds_steps/*Int*/ = 2
-	
-	static set_hard_time_limit = function (_v/*Value*/)
-	{
-		set_hard_time_limit_sqr(_v*_v)
-	}
-	
-	static set_hard_time_limit_sqr = function (_v/*Value*/)
-	{
-		hard_time_limit = _v
-		hard_time_limit_s = sqrt(_v)
-	}
+	iterations/*Int*/ = 0
 	
 	static set_box = function (_box/*Rect*/)
 	{
 		rect_set_from(box_original, _box)
 		vec_set_from(box_min, rect_get_min_corner(_box))
 		vec_set_from(box_max, rect_get_max_corner(_box))
+		// this is to account for blocs such as fences, which have a hitbox
+		// that extends above their grid cell. Technically, only need to subtract
+		// 0.5, since fences (and fence-likes) afaicr are the only blocs that do this
+		// but its good to future proof v_v
+		box_min[Vec.y] -= 1
 	}
 	
 	static run = function ()/*Value*/
 	{
+		iterations = 0
 		time = 0.0
 		time_max = 0.0
-		time_accumulator = 0.0
-		var extra_steps = adds_steps
 		vec_set_xy(time_delta, 0,0)
 		vec_set_xy(time_next, 0,0)
 		
@@ -88,11 +77,21 @@ constructor begin
 		{
 			return 0
 		}
-
-		axis = advance_step()
+		
+		draw_arrow(
+			leading_corner[Vec.x]-1,
+			leading_corner[Vec.y]-1,
+			leading_corner[Vec.x]+direction[Vec.x]*time-1,
+			leading_corner[Vec.y]+direction[Vec.y]*time-1,
+			3/16
+		)
+		
+		axis = lesser_axis()
+		//axis = advance_step()
 
 		// loop along raycast vector
-		while time <= min(time_max, hard_time_limit_s)
+		//while time <= min(time_max, hard_time_limit_s)
+		while time <= time_max
 		{
 			// sweeps over leading face of AABB
 			if check_collide(axis)
@@ -101,37 +100,26 @@ constructor begin
 				var done = on_collide()
 				if done
 				{
-					//--extra_steps
-					//if extra_steps < 0
-					{
-						return time_accumulator
-					}
+					return
+					//return time_accumulator
 				}
 			}
+			iterations++
 			axis = advance_step()
 		}
-
-		// reached the end of the vector unobstructed, finish and exit
-		time_accumulator += time_max
-		
-		vec_add_vec(box_min, direction)
-		vec_add_vec(box_max, direction)
-
-		return time_accumulator
 	}
 	
 	static init_sweep = function ()
 	{
 		// parametrization t along raycast
 		time = 0.0
-		
-		time_max = min(hard_time_limit, vec_sqr_length(direction))
+		time_max = vec_sqr_length(direction)
 		if time_max <= 0
 		{
 			return
 		}
 		time_max = sqrt(time_max)
-		for (var i = 0; i < 2; i++)
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			var dir = direction[i] >= 0
 			step[i] = dir ? 1 : -1
@@ -154,56 +142,114 @@ constructor begin
 	// advance to next voxel boundary, and return which axis was stepped
 	static advance_step = function ()/*Int*/
 	{
-		var naxis = time_next[0] < time_next[1] ? 0 : 1
-		
+		var naxis = lesser_axis()
+
 		var dt = time_next[naxis] - time
 		time = time_next[naxis]
+
 		leading_indices[naxis] += step[naxis]
+		
 		time_next[naxis] += time_delta[naxis]
-		for (var i = 0; i < 2; i++)
+		
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
-			trailing_corner[i] += dt * normalized[i]
+			trailing_corner[i] += normalized[i] * dt
 			trailing_indices[i] = trailing_edge_to_int(trailing_corner[i], step[i])
 		}
-
+		
 		return naxis
 	}
 	
 	// check for collisions - iterate over the leading face on the advancing axis
 	static check_collide = function (i_axis/*Int*/)/*Boolean*/
 	{
-		var stepx = step[0]
-		var x0 = (i_axis == 0) ? leading_indices[0] : trailing_indices[0]
-		var x1 = leading_indices[0] + stepx
-		var stepy = step[1]
-		var y0 = (i_axis == 1) ? leading_indices[1] : trailing_indices[1]
-		var y1 = leading_indices[1] + stepy
+		static pev_x0 = 0
+		static pev_y0 = 0
+		static pev_c = 0
 		
-		draw_primitive_begin(pr_linestrip)
-		draw_vertex_colour(x0, y0, c_aqua, 0.5)
-		draw_vertex_colour(x1, y0, c_aqua, 0.5)
-		draw_vertex_colour(x1, y1, c_aqua, 0.5)
-		draw_vertex_colour(x0, y1, c_aqua, 0.5)
-		draw_vertex_colour(x0, y0, c_aqua, 0.5)
-		draw_primitive_end()
+		var stepx = step[Vec.x]
+		var stepy = step[Vec.y]
+
+		var x0 = i_axis == Vec.x ? leading_indices[Vec.x] : trailing_indices[Vec.x]
+		var y0 = i_axis == Vec.y ? leading_indices[Vec.y] : trailing_indices[Vec.y]
+
+		var x1 = leading_indices[Vec.x] + step[Vec.x]
+		var y1 = leading_indices[Vec.y] + step[Vec.y]
 		
 		var xcount = abs(x1-x0)
 		var ycount = abs(y1-y0)
-		for (var xx = x0; --xcount >= 0; xx += stepx)
-		{
-			var yc = ycount
-			for (var yy = y0; --yc >= 0; yy += stepy)
+		
+		begin // draw debug
+			if iterations <> 0 and pev_x0 == x0 and pev_y0 == y0
 			{
-				draw_primitive_begin(pr_trianglefan)
-				var ch = ((xx^yy)&1) <> 0
-				var c = ch ? c_teal : c_aqua
-				var a = ch ? 0.5 : 0.1
-				draw_vertex_colour(xx, yy, c, a)
-				draw_vertex_colour(xx+1, yy, c, a)
-				draw_vertex_colour(xx+1, yy+1, c, a)
-				draw_vertex_colour(xx, yy+1, c, a)
-				draw_primitive_end()
-				if callback_get_voxel(xx, yy) or callback_get_voxel(xx, yy-1)
+				pev_c++
+			}
+			else
+			{
+				pev_c = 0
+			}
+			
+			var m0 = 0.1
+			var m1 = 1-m0
+			var xx0 = x0
+			var yy0 = y0
+			
+			var xx1 = leading_indices[0]
+			var yy1 = leading_indices[1]
+
+			draw_set_color(c_aqua)
+			draw_set_alpha(0.5)
+			draw_arrow(xx0-1+0.5, yy0-1+0.5, xx1-1+0.5, yy1-1+0.5, 4/16)
+			var tmp = xx0
+			xx0 = min(xx0, xx1)
+			xx1 = max(tmp, xx1)
+			tmp = yy0
+			yy0 = min(yy0, yy1)
+			yy1 = max(tmp, yy1)
+			
+			xx0 += m0
+			yy0 += m0
+			xx1 += m1
+			yy1 += m1
+			
+			draw_set_color(c_yellow)
+			draw_primitive_begin(pr_linestrip)
+			draw_vertex(xx0, yy0)
+			draw_vertex(xx1, yy0)
+			draw_vertex(xx1, yy1)
+			draw_vertex(xx0, yy1)
+			draw_vertex(xx0, yy0)
+			draw_primitive_end()
+			
+			draw_set_color(c_white)
+			draw_set_alpha(0.5)
+			draw_set_halign(fa_center)
+			
+			draw_text_in_world((xx0+xx1)*0.5, (yy0+yy1)*0.5+pev_c*0.25, $"{iterations}", 0.5)
+			draw_set_halign(fa_left)
+			draw_set_alpha(1)
+			
+			pev_x0 = x0
+			pev_y0 = y0
+		end
+		
+		//begin // "normalize" start & end
+		//	var temp
+		//	temp = x0
+		//	x0 = min(temp, x1)
+		//	x1 = max(temp, x1)
+		//	temp = y0
+		//	y0 = min(temp, y1)
+		//	y1 = max(temp, y1)
+		//end
+		
+		var yc, yy
+		for (var xx = x0; --xcount >= 0; xx+=stepx)//++)
+		{
+			yc = ycount
+			for (yy = y0; --yc >= 0; yy+=stepy)//++)
+			{
+				if callback_get_voxel(xx, yy)
 				{
 					return true
 				}
@@ -217,13 +263,12 @@ constructor begin
 	{
 		static remaining/*Vec*/ = vec_create()
 		// set up for callback
-		time_accumulator += time
 		var dir = step[axis]
 
 		// vector moved so far, and left to move
 		var done = time / time_max
 
-		for (var i = 0; i < 2; i++)
+		for (var i = 0; i < Vec.sizeof; i++)
 		{
 			var dv = direction[i] * done
 			box_min[i] += dv
@@ -237,7 +282,8 @@ constructor begin
 		to_set[axis] = floor(to_set[axis] + 0.5)
 
 		// call back to let client update the "left to go" vector
-		var res = callback_on_collision(time_accumulator, axis, dir, remaining)
+		var res = callback_on_collision(1, axis, dir, remaining)
+		//var res = callback_on_collision(time_accumulator, axis, dir, remaining)
 
 		// bail out out on truthy response
 		if res
@@ -262,23 +308,13 @@ constructor begin
 		return floor(coord + step * math_get_epsilon())
 	}
 	
-	static sweep = function (dont_translate/*Boolean*/=false)/*Number*/
-	// (getVoxel, box, direction, callback, noTranslate)
+	static lesser_axis = function ()
 	{
-		// run sweep implementation
-		var dist = run()
-		
-		// translate box by distance needed to updated base value
-		//if not dont_translate
-		//{
-		//	for (var i = 0; i < 2; i++)
-		//	{
-		//		result[i] = (direction[i] > 0) ? maxx[i] - box.max[i] : base[i] - box.base[i]
-		//	}
-		//	box.translate(result)
-		//}
-		
-		// return value is total distance moved (not necessarily magnitude of [end]-[start])
-		return dist
+		return time_next[Vec.x] < time_next[Vec.y] ? Vec.x : Vec.y
+	}
+	
+	static sweep = function ()
+	{
+		run()
 	}
 end

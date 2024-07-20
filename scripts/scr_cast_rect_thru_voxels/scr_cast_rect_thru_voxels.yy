@@ -1,5 +1,5 @@
 {
-  "$GMScript":"",
+  "$GMScript":"v1",
   "%Name":"scr_cast_rect_thru_voxels",
   "isCompatibility":false,
   "isDnD":false,

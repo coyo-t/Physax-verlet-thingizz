@@ -1,16 +1,16 @@
 
 global.block_soundtypes = {
-	none:  new BlockSoundType(, 0.8),
-	dirt:  new BlockSoundType(, 0.6, "pl_step_dirt"),
-	tile:  new BlockSoundType(, 0.8, "pl_step_tile"),
-	grate: new BlockSoundType(, 0.5, "pl_step_grate"),
+	none:  new BlockSoundType( , 0.8),
+	dirt:  new BlockSoundType( , 0.6, "pl_step_dirt"),
+	tile:  new BlockSoundType( , 0.8, "pl_step_tile"),
+	grate: new BlockSoundType( , 0.5, "pl_step_grate"),
 }
 
 global.blocks_all/*Array<Block>*/ = []
 global.blocks_nametable/*Dict<String, Block>*/ = {}
 
 /*generic(T=Block)*/
-function blocks_register (_name/*String*/, _block/*:T*/)/*->T*/
+function blocks_register (_name/*String*/, _block/*T*/)/*T*/
 {
 	_block.runtime_id = array_length(global.blocks_all)
 	array_push(global.blocks_all, _block)
@@ -24,6 +24,9 @@ function blocks_get_by_id (_id)
 {
 	return global.blocks_all[_id]
 }
+
+
+#region registering
 
 with blocks_register("air", new AirBlock())
 {
@@ -140,8 +143,16 @@ with blocks_register("ice", new IceBlock())
 	sound_type = global.block_soundtypes.tile
 }
 
+with blocks_register("tilled_dirt", new Block())
+{
+	global.tilled_dirt = self
+	colour = #824d1c
+	sound_type = global.block_soundtypes.dirt
+	rect_set_y1(shape, 15/16)
+}
 
 
+#endregion
 
 
 

@@ -92,8 +92,8 @@ else if mouse_check_button(mb_right)
 
 if keyboard_check(ord("C"))
 {
-	viewcast_x = mouse.world_x
-	viewcast_y = mouse.world_y
+	viewcast.x = mouse.world_x
+	viewcast.y = mouse.world_y
 }
 
 begin

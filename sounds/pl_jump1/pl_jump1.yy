@@ -12,8 +12,8 @@
   "duration":0.550748,
   "name":"pl_jump1",
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"sound",
+    "path":"folders/sound.yy",
   },
   "preload":false,
   "resourceType":"GMSound",

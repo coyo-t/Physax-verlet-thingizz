@@ -11,7 +11,7 @@ enum Rect
 
 function __rect_get_cache ()
 {
-	static CACHE = new SimpleCache()
+	static CACHE = new SimpleCache(function () { return rect_create() })
 	return CACHE
 }
 
@@ -20,16 +20,10 @@ function rect_create (_x0=0/*:Val*/, _y0=0/*:Val*/, _x1=1/*:Val*/, _y1=1/*:Val*/
 	return [_x0, _y0, _x1, _y1]
 }
 
-///@returns {Array<Real>
+///@returns {Array<Real>}
 function rect_get_temp (_x0=0, _y0=0, _x1=1, _y1=1)
 {
-	var cache = __rect_get_cache()
-	var ca = cache.array
-	if cache.cursor >= array_length(cache.array)
-	{
-		array_push(ca, rect_create(0,0,0,0))
-	}
-	return rect_set_corners(ca[cache.cursor++], _x0, _y0, _x1, _y1)
+	return rect_set_corners(__rect_get_cache().get(), _x0, _y0, _x1, _y1)
 }
 
 function rect_copy (_self/*:Rect*/) /*-> Rect*/
@@ -66,6 +60,25 @@ function rect_get_min_corner (_self/*:Rect*/) /*-> Vec*/
 function rect_get_max_corner (_self/*:Rect*/) /*-> Vec*/
 {
 	return vec_create(_self[Rect.x1], _self[Rect.y1])
+}
+
+function rect_x0 (_self)
+{
+	return _self[Rect.x0]
+}
+
+function rect_y0 (_self)
+{
+	return _self[Rect.y0]
+}
+function rect_x1 (_self)
+{
+	return _self[Rect.x1]
+}
+
+function rect_y1 (_self)
+{
+	return _self[Rect.y1]
 }
 
 function rect_get_x0 (_self/*:Rect*/) /*-> number*/
@@ -255,3 +268,19 @@ function rect_draw (_self/*Rect*/, _x/*Val*/=0, _y/*Val*/=0)
 	draw_vertex(x0, y0)
 	draw_primitive_end()
 }
+
+function rect_draw_filled (_self/*Rect*/, _x/*Val*/=0, _y/*Val*/=0)
+{
+	var x0 = _self[0]+_x
+	var y0 = _self[1]+_y
+	var x1 = _self[2]+_x
+	var y1 = _self[3]+_y
+	draw_primitive_begin(pr_trianglefan)
+	draw_vertex(x0, y0)
+	draw_vertex(x1, y0)
+	draw_vertex(x1, y1)
+	draw_vertex(x0, y1)
+	draw_primitive_end()
+	
+}
+

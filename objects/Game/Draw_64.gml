@@ -61,9 +61,6 @@ begin
 	}
 	
 	gpu_push_state()
-	gpu_set_cullmode(cull_clockwise)
-	gpu_set_zwriteenable(true)
-	gpu_set_ztestenable(true)
 
 	var pic_scale = 64
 	var pic_x = room_width - pic_scale - 16
@@ -76,7 +73,42 @@ begin
 	
 	matrix_set(matrix_world, matrix_multiply(paint_matrix, matrix_get(matrix_world)))
 
+	begin
+		var in0 = -0.5+0.001
+		var in1 = +0.5-0.001
+		
+		draw_primitive_begin(pr_trianglelist)
+		draw_set_alpha(0.25)
+		draw_set_color(c_white) // y
+		draw_vertex_3d(in0, -0.5, in0)
+		draw_vertex_3d(in1, -0.5, in0)
+		draw_vertex_3d(in0, -0.5, in1)
+		draw_vertex_3d(in1, -0.5, in0)
+		draw_vertex_3d(in0, -0.5, in1)
+		draw_vertex_3d(in1, -0.5, in1)
+		draw_set_color(c_grey) // x
+		draw_vertex_3d(-0.5, in0, in0)
+		draw_vertex_3d(-0.5, in1, in0)
+		draw_vertex_3d(-0.5, in0, in1)
+		draw_vertex_3d(-0.5, in1, in0)
+		draw_vertex_3d(-0.5, in0, in1)
+		draw_vertex_3d(-0.5, in1, in1)
+		draw_set_color(c_ltgrey) // z
+		draw_vertex_3d(in0, in0, -0.5)
+		draw_vertex_3d(in1, in0, -0.5)
+		draw_vertex_3d(in0, in1, -0.5)
+		draw_vertex_3d(in1, in0, -0.5)
+		draw_vertex_3d(in0, in1, -0.5)
+		draw_vertex_3d(in1, in1, -0.5)
+		draw_primitive_end()
+		draw_set_alpha(1.0)
+		draw_set_color(c_white)
+	end
+	gpu_set_cullmode(cull_clockwise)
+	gpu_set_zwriteenable(true)
+	gpu_set_ztestenable(true)
 	vertex_submit(palette_vb, pr_trianglelist, -1)
+	
 	
 	gpu_pop_state()
 	matrix_pop(matrix_world)

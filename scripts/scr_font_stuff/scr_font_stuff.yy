@@ -1,12 +1,12 @@
 {
-  "$GMScript":"",
+  "$GMScript":"v1",
   "%Name":"scr_font_stuff",
   "isCompatibility":false,
   "isDnD":false,
   "name":"scr_font_stuff",
   "parent":{
-    "name":"Physax verlet thingizz",
-    "path":"Physax verlet thingizz.yyp",
+    "name":"scripts",
+    "path":"folders/scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

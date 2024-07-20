@@ -20,9 +20,6 @@ end
 
 function Player () : Entity() constructor begin
 
-	tempHitbox = rect_create(0,0,0,0)
-	tempRect2 = rect_create(0,0,0,0)
-
 	temp_adj_colliders = []
 	temp_adj_check = rect_create(0,0,0,0)
 
@@ -156,7 +153,6 @@ function Player () : Entity() constructor begin
 	///@self
 	static move = function (xDirection/*:number*/, yDirection/*:number*/)
 	{
-		static ORIGINAL_BOX = rect_create(0,0,0,0)
 		static TEMP_VEC = vec_create()
 		temp_adj_colliders = []
 		
@@ -170,9 +166,9 @@ function Player () : Entity() constructor begin
 		//	xDirection = beginXD = modv.x;
 		//	yDirection = beginYD = modv.y;
 		//}
-	
-		rect_set_from(ORIGINAL_BOX, box)
-		rect_set_from(tempHitbox, box)
+		
+		var ORIGINAL_BOX = rect_copy_temp(box)
+		var tempHitbox = rect_copy_temp(box)
 		
 		var broadPhase = Game.map.get_colliders(rect_expand(rect_copy_temp(box), xDirection, yDirection));
 		var br_length = array_length(broadPhase)
@@ -205,8 +201,8 @@ function Player () : Entity() constructor begin
 			var by = yDirection
 			xDirection = beginXD
 			yDirection = foot_size
-		
-			rect_set_from(tempRect2, box)
+			
+			var tempRect2 = rect_copy_temp(box)
 			rect_set_from(box, tempHitbox)
 			var broad = Game.map.get_colliders(rect_expand(rect_copy_temp(box), xDirection, yDirection))
 			var bcount = array_length(broad)
@@ -368,7 +364,6 @@ function Player () : Entity() constructor begin
 	///@self
 	static tick = function ()
 	{
-		static temprect = rect_create(0,0,0,0)
 	
 		update_pev()
 	

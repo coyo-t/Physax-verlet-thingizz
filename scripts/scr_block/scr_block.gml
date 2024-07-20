@@ -64,7 +64,6 @@ function Block () constructor {
 	}
 }
 
-///@hint AirBlock extends Block
 function AirBlock () : Block() constructor begin
 	
 	ground_slipperiness = 0.6//*0.91
@@ -90,7 +89,6 @@ function AirBlock () : Block() constructor begin
 	}
 end
 
-///@hint OutOfBoundsBlock extends Block
 function OutOfBoundsBlock () : Block() constructor begin
 	
 	static show_in_palette = function ()/*Boolean*/
@@ -100,12 +98,10 @@ function OutOfBoundsBlock () : Block() constructor begin
 	
 end
 
-///@hint SlabBlock extends Block
 function SlabBlock (_height=0.5, _base=0.0) : Block() constructor begin
 	rect_set_corners(shape, 0, _base, 1, _height)
 end
 
-///@hint FenceBlock extends Block
 function FenceBlock () : Block() constructor begin
 	
 	var texels = 1/16
@@ -121,7 +117,6 @@ function FenceBlock () : Block() constructor begin
 	}
 end
 
-///@hint StairBlock extends Block
 function StairBlock (_facing) : Block() constructor begin
 	
 	rect_set_corners(shape, 0, 0, 1, 0.5)
