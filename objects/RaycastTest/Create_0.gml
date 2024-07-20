@@ -348,6 +348,9 @@ function __Tracer () constructor begin
 	leading_cel  = vec_create()
 	trailing_cel = vec_create()
 	
+	leading_start = vec_create()
+	trailing_offset = vec_create()
+	
 	step = vec_create()
 	delta_dist = vec_create()
 	next_dist  = vec_create()
@@ -447,6 +450,9 @@ function __Tracer () constructor begin
 				? (leading_cel[i] + 1 - leading_corner[i])
 				: (leading_corner[i] - leading_cel[i])
 			next_dist[i] *= time_delta[i]
+		
+			leading_start[i] = leading_corner[i]
+			trailing_offset[i] = leading_corner[i] - trailing_corner[i]
 		}
 		
 		iter_count = __calc_iter_count(leading_corner, box_direction)
@@ -470,6 +476,92 @@ function __Tracer () constructor begin
 		return next_dist[Vec.x] < next_dist[Vec.y] ? Vec.x : Vec.y
 	}
 	
+	static __advance = function ()
+	{
+		var naxis = __lesser_axis()
+
+		current_dist = next_dist[naxis]
+		leading_cel[naxis] += step[naxis]
+		next_dist[naxis] += delta_dist[naxis]
+		
+		var rp = current_dist * max_dist
+		
+		for (var i = 0; i < Vec.sizeof; i++)
+		{
+			leading_corner[i] = leading_start[i] + normalized[i] * rp
+			trailing_corner[i] = leading_corner[i] - trailing_offset[i]
+			trailing_indices[i] = __trailing_to_cel(trailing_corner[i], step[i])
+		}
+		
+		return naxis
+	}
+	
+	static __test = function ()
+	{
+		var stepx = step[Vec.x]
+		var stepy = step[Vec.y]
+		
+		var x0, y0
+		if axis == Vec.x
+		{
+			x0 = leading_indices[Vec.x]
+			y0 = trailing_indices[Vec.y]
+		}
+		else if axis == Vec.y
+		{
+			x0 = trailing_indices[Vec.x]
+			y0 = leading_indices[Vec.y]
+		}
+
+		var x1 = leading_indices[Vec.x] + step[Vec.x]
+		var y1 = leading_indices[Vec.y] + step[Vec.y]
+		
+		var xcount = abs(x1-x0)
+		var ycount = abs(y1-y0)
+		
+		var any = false
+		var yc, yy
+		for (var xx = x0; --xcount >= 0; xx+=stepx)
+		{
+			yc = ycount
+			for (yy = y0; --yc >= 0; yy+=stepy)
+			{
+				if __cel_callback(xx, yy)
+				{
+					switch __iter_mode
+					{
+						case __CONT_BATCH:
+							any = true
+							break
+						case __HARD_STOP:
+							return true
+					}
+				}
+			}
+		}
+		return any
+	}
+
+	static trace = function ()
+	{
+		axis = __lesser_axis()
+		
+		for (var i = 0; i < iter_count; i++)
+		{
+			var cel_x = leading_cel[Vec.x]
+			var cel_y = leading_cel[Vec.y]
+			
+			if __test()
+			{
+				return true
+			}
+			
+			axis = __advance()
+		}
+		
+		return false
+	}
+
 end
 
 
@@ -607,6 +699,7 @@ function trace (_get_bloc_callback)
 	var time = 0
 	
 	
+	
 	while (--maxiter) >= 0
 	{
 		var cel_x = cel[Vec.x]
@@ -637,10 +730,21 @@ function trace (_get_bloc_callback)
 			axis = Vec.y
 		}
 		
+		var dt = time-time_next[axis]
 		time = time_next[axis]
 		time_next[axis] += time_delta[axis]
 		cel[axis] += step[axis]
 		
+		var dotx = normal[0] * time * time_max
+		var doty = normal[1] * time * time_max
+		
+		draw_set_color(axis == Vec.x ? c_red : c_yellow)
+		draw_set_alpha(0.4)
+		draw_circle(leading_corner[0]+dotx-1, leading_corner[1]+doty-1, 1/16, false)
+		draw_set_alpha(0.2)
+		ray.draw_box(dotx, doty, true)
+		draw_set_alpha(1)
+
 	}
 	return false
 }
